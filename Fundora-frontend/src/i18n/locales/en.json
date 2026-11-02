@@ -1,0 +1,638 @@
+{
+  "brand": {
+    "name": "Fundora",
+    "homeLabel": "Fundora home"
+  },
+  "nav": {
+    "skip": "Skip to main content",
+    "label": "Main",
+    "howItWorks": "How it works",
+    "features": "Features",
+    "faq": "FAQ",
+    "login": "Log in",
+    "signup": "Sign up free"
+  },
+  "hero": {
+    "eyebrow": "Free for every undergraduate student in India",
+    "title": "Find every scholarship you qualify for, in one place.",
+    "subtitle": "Fill one profile. Fundora checks it against scholarships, fee waivers, loans and grants, then tells you where you stand and why.",
+    "primaryCta": "Sign up free",
+    "secondaryCta": "See how it works",
+    "points": {
+      "free": "No fees, ever",
+      "passwords": "Never asks for passwords",
+      "official": "You apply on the official site"
+    },
+    "preview": {
+      "label": "Example of your results page",
+      "title": "Your matches",
+      "badge": "Example",
+      "tabs": {
+        "eligible": "Eligible",
+        "almost": "Almost",
+        "not": "Not eligible"
+      },
+      "deadline": "Deadline {{date}}",
+      "rows": {
+        "one": {
+          "name": "State merit scholarship",
+          "amount": "Up to ₹20,000 / year",
+          "date": "15 Dec",
+          "reason": "Your marks and family income meet every rule."
+        },
+        "two": {
+          "name": "Post-matric scholarship",
+          "amount": "Tuition + maintenance",
+          "date": "31 Dec",
+          "reason": "Your family income is ₹30,000 above the limit."
+        },
+        "three": {
+          "name": "Women in engineering grant",
+          "amount": "₹50,000 one-time",
+          "date": "10 Jan",
+          "reason": "Open only to students domiciled in another state."
+        }
+      }
+    }
+  },
+  "highlights": {
+    "label": "Fundora at a glance",
+    "items": {
+      "courses": {
+        "value": "19",
+        "label": "UG course categories covered"
+      },
+      "profile": {
+        "value": "1",
+        "label": "profile for every scheme"
+      },
+      "states": {
+        "value": "3",
+        "label": "clear results, each with a reason"
+      },
+      "cost": {
+        "value": "₹0",
+        "label": "cost to students, always"
+      }
+    }
+  },
+  "howItWorks": {
+    "eyebrow": "How it works",
+    "title": "From sign-up to applying in four steps",
+    "description": "No searching through dozens of portals. Here is exactly what happens after you join.",
+    "stepLabel": "Step {{n}}",
+    "steps": {
+      "account": {
+        "title": "Create a free account",
+        "body": "Sign up with your email and a password, then confirm your email from the link we send you."
+      },
+      "profile": {
+        "title": "Fill your profile once",
+        "body": "Five short steps: education, marks and attendance, family and income, category and background, documents you have. Save and come back any time."
+      },
+      "matches": {
+        "title": "See your matches",
+        "body": "Every scheme is sorted into Eligible, Almost eligible or Not eligible, with a plain-language reason for each."
+      },
+      "apply": {
+        "title": "Apply on the official site",
+        "body": "Open a scheme to see its documents, steps and deadline, then use the official link. Track it in Fundora and get reminders."
+      }
+    }
+  },
+  "results": {
+    "eyebrow": "Your results",
+    "title": "Three clear answers, never a guess",
+    "description": "Every result tells you why, so you know what to do next.",
+    "items": {
+      "eligible": {
+        "title": "Eligible",
+        "body": "You meet every rule. Check the documents and apply before the deadline.",
+        "example": "“Your marks and income meet every rule.”"
+      },
+      "almost": {
+        "title": "Almost eligible",
+        "body": "You are close on one or two things like income, marks or attendance. We show how close, so you can check with the scheme or your college.",
+        "example": "“Your attendance is 3% below the 75% minimum.”"
+      },
+      "not": {
+        "title": "Not eligible",
+        "body": "A key rule does not match, such as course, state or category. You still see why, so you do not waste time.",
+        "example": "“This scheme is only for law students.”"
+      }
+    }
+  },
+  "features": {
+    "eyebrow": "Features",
+    "title": "Everything you need to find and keep funding",
+    "description": "Built for students who are short on time and tired of missing deadlines.",
+    "items": {
+      "oneProfile": {
+        "title": "One profile, every scheme",
+        "body": "Answer once. We check you against every scheme in our database, and re-check when you update."
+      },
+      "reasons": {
+        "title": "Plain-language reasons",
+        "body": "No jargon. Each result says exactly which rule you meet or miss, in rupees and percentages."
+      },
+      "details": {
+        "title": "Clear scheme pages",
+        "body": "Amount, deadline, documents needed, step-by-step instructions and the official link, all on one page."
+      },
+      "tracker": {
+        "title": "Application tracker",
+        "body": "Move each scheme through Saved, Applying, Applied, Awarded and Renewal due, so nothing slips."
+      },
+      "reminders": {
+        "title": "Deadline reminders",
+        "body": "Email reminders 14, 7 and 1 day before a saved deadline, plus renewal reminders every year."
+      },
+      "verified": {
+        "title": "Verified sources",
+        "body": "Every scheme shows its official source and the date we last checked it. Old data is flagged."
+      },
+      "guides": {
+        "title": "Step-by-step guides",
+        "body": "Simple guides for National Scholarship Portal sign-up, Aadhaar–bank seeding and getting certificates."
+      },
+      "counsellor": {
+        "title": "Help from your counsellor",
+        "body": "Link with your college counsellor or an NGO for guidance. They see your matches only if you accept."
+      },
+      "language": {
+        "title": "Works on any phone",
+        "body": "Light and fast on slow networks. English today, with Kannada and Hindi on the way."
+      }
+    }
+  },
+  "coverage": {
+    "eyebrow": "What we cover",
+    "title": "More than scholarships",
+    "description": "Fundora lists every kind of support an undergraduate can get, from central and state governments and private foundations.",
+    "typesLabel": "Types of support",
+    "types": {
+      "scholarships": "Scholarships",
+      "loans": "Education loans",
+      "waivers": "Fee waivers",
+      "laptop": "Laptops and books",
+      "hostel": "Hostel and travel",
+      "coaching": "Coaching support",
+      "girls": "Schemes for girls",
+      "disability": "Schemes for students with disabilities",
+      "rural": "Schemes for rural students"
+    },
+    "coursesTitle": "19 undergraduate course categories",
+    "coursesBody": "Engineering, medicine, nursing, pharmacy, arts, science, commerce, law, management, design, agriculture and more.",
+    "rolloutTitle": "Growing state by state",
+    "rolloutBody": "We start with central government and Karnataka schemes, then add other states as each one is verified."
+  },
+  "prepare": {
+    "eyebrow": "Before you start",
+    "title": "Keep these handy",
+    "description": "You don't upload anything to Fundora. We only ask whether you have each document, so we can tell you what's missing for a scheme.",
+    "checklistLabel": "Documents most schemes ask for",
+    "documents": {
+      "marks": "Latest marks cards or grade sheets",
+      "income": "Family income certificate",
+      "caste": "Caste or category certificate, if it applies to you",
+      "disability": "Disability certificate, if it applies to you",
+      "domicile": "Domicile or residence certificate",
+      "bonafide": "College bonafide certificate and fee receipt",
+      "bank": "A bank account seeded with your Aadhaar",
+      "photo": "A recent passport-size photo"
+    },
+    "tipsLabel": "Tips for better results",
+    "tips": {
+      "email": "Use an email you check often. Reminders go there.",
+      "exact": "Enter income and marks exactly as on your certificates.",
+      "update": "Update your profile every year. Renewals depend on attendance and CGPA.",
+      "confirm": "Always read the rules on the official site before you submit."
+    }
+  },
+  "safety": {
+    "eyebrow": "Safety and privacy",
+    "title": "Your data stays yours",
+    "description": "Scholarship scams are common. Here is exactly what Fundora will and will not do.",
+    "neverTitle": "Fundora will never",
+    "never": {
+      "fee": "Charge you a fee of any kind",
+      "password": "Ask for portal passwords or OTPs",
+      "ids": "Ask for your Aadhaar or bank account number",
+      "submit": "Fill or submit application forms for you"
+    },
+    "promiseTitle": "How we protect you",
+    "promise": {
+      "encrypt": "Income, category and disability details are encrypted",
+      "consent": "Counsellors see your profile only after you accept",
+      "delete": "Delete your account and all your data at any time",
+      "official": "Every apply button goes to the official website"
+    },
+    "warningTitle": "Spot a scam",
+    "warningBody": "If anyone using the Fundora name asks you for money, an OTP or a password, it is a scam. Do not pay, and report it to us."
+  },
+  "faq": {
+    "eyebrow": "FAQ",
+    "title": "Questions students ask",
+    "items": {
+      "free": {
+        "q": "Is Fundora really free?",
+        "a": "Yes. Fundora is free for students and always will be. There is no premium plan and no fee to see your matches."
+      },
+      "apply": {
+        "q": "Does Fundora apply for me?",
+        "a": "No. Fundora finds schemes and explains them. You apply yourself on the scheme's official website, using the link on each scheme page."
+      },
+      "accuracy": {
+        "q": "How accurate is “Eligible”?",
+        "a": "Results come from the rules in each scheme's official notice, and every scheme shows when we last checked it. Rules can change, so always confirm on the official site before you submit."
+      },
+      "data": {
+        "q": "What information do I need to share?",
+        "a": "Your course, marks, attendance, family income, category, state and a few yes/no questions. Sensitive details are encrypted. We never ask for Aadhaar, bank or ID numbers."
+      },
+      "almost": {
+        "q": "What should I do if I'm “Almost eligible”?",
+        "a": "Read the reason. If it is a small gap, like attendance or marks, check the latest official rules or ask your college. Some schemes allow exceptions or update limits each year."
+      },
+      "who": {
+        "q": "Who can use Fundora?",
+        "a": "Any undergraduate student in India, across 19 course categories. We cover central and Karnataka schemes first and add more states over time."
+      },
+      "wrong": {
+        "q": "I found wrong information. What do I do?",
+        "a": "Use the “Report wrong info” button on the scheme page. Our team checks every report against the official source."
+      },
+      "language": {
+        "q": "Is Fundora available in my language?",
+        "a": "Fundora is in English today. Kannada and Hindi are coming next."
+      }
+    }
+  },
+  "cta": {
+    "title": "Your next scholarship might be one you've never heard of.",
+    "body": "Create your free profile and see your matches today.",
+    "primary": "Sign up free",
+    "secondary": "Log in"
+  },
+  "footer": {
+    "tagline": "Every scholarship you qualify for, in one place.",
+    "product": "Product",
+    "help": "Help",
+    "legal": "Legal",
+    "browse": "Browse schemes",
+    "guides": "Guides",
+    "privacy": "Privacy policy",
+    "terms": "Terms of use",
+    "builtBy": "Built by students at BMS College of Engineering, Bengaluru.",
+    "disclaimer": "Fundora is an independent student project and is not affiliated with any government body. Always confirm scheme details on the official website before applying.",
+    "copyright": "© {{year}} Fundora"
+  },
+  "auth": {
+    "modeLabel": "Log in or create an account",
+    "loginTab": "Log in",
+    "signupTab": "Create account",
+    "safety": "Fundora will never ask for your OTP or scholarship portal passwords.",
+    "panel": {
+      "title": "Every scholarship you qualify for, in one place.",
+      "body": "Fill one profile and see where you stand on every scheme, with a reason for each result.",
+      "illustration": "A student at a desk checking scholarship results on a laptop"
+    },
+    "email": {
+      "label": "Email",
+      "placeholder": "you@college.edu",
+      "suggestion": "Did you mean {{email}}?",
+      "useSuggestion": "Yes, use it",
+      "keepMine": "No, keep mine",
+      "errors": {
+        "required": "Enter your email address.",
+        "invalid": "That doesn't look like an email address. Check for a missing @ or dot."
+      }
+    },
+    "password": {
+      "label": "Password",
+      "show": "Show",
+      "hide": "Hide",
+      "showLabel": "Show password",
+      "hideLabel": "Hide password"
+    },
+    "errors": {
+      "network": "We couldn't reach Fundora. Check your connection and try again.",
+      "generic": "Something went wrong on our side. Please try again."
+    },
+    "google": {
+      "continue": "Continue with Google",
+      "notReady": "Google sign-in isn’t available yet. Please use your email for now."
+    },
+    "or": "or"
+  },
+  "login": {
+    "docTitle": "Log in · Fundora",
+    "title": "Welcome back",
+    "subtitle": "Log in to see your matches, tracker and reminders.",
+    "stepLabel": "Step {{n}} of 2",
+    "email": {
+      "continue": "Continue",
+      "checking": "Checking your email…",
+      "verified": "Email verified",
+      "change": "Change",
+      "changeLabel": "Change email address"
+    },
+    "password": {
+      "forgot": "Forgot password?",
+      "submit": "Log in",
+      "submitting": "Logging in…",
+      "errors": {
+        "required": "Enter your password.",
+        "wrong": "That email and password don't match. Try again, or reset your password."
+      }
+    },
+    "newHere": "New to Fundora?",
+    "createAccount": "Create a free account"
+  },
+  "signup": {
+    "docTitle": "Create account · Fundora",
+    "title": "Create your free account",
+    "subtitle": "One profile, every scheme you qualify for. No fees, ever.",
+    "password": {
+      "hint": "At least 8 characters. A short sentence is easy to remember.",
+      "strength": "Password strength: {{level}}",
+      "levels": {
+        "short": "Too short",
+        "fair": "Fair",
+        "good": "Good",
+        "strong": "Strong"
+      },
+      "errors": {
+        "required": "Create a password.",
+        "short": "Use at least 8 characters."
+      }
+    },
+    "consent": {
+      "label": "I agree to the <terms>Terms of use</terms> and <privacy>Privacy policy</privacy>, and allow Fundora to use my profile details to find schemes for me.",
+      "error": "Please agree to continue."
+    },
+    "submit": "Create account",
+    "submitting": "Creating your account…",
+    "errors": {
+      "exists": "An account with this email already exists. Log in instead."
+    },
+    "haveAccount": "Already have an account?",
+    "login": "Log in",
+    "sent": {
+      "title": "Check your inbox",
+      "body": "We sent a verification link to <strong>{{email}}</strong>. Open it to activate your account.",
+      "spam": "Can’t find it? Check your spam or promotions folder.",
+      "changeEmail": "Use a different email",
+      "login": "Go to log in"
+    }
+  },
+  "placeholder": {
+    "forgot": "Reset your password",
+    "matches": "Your matches",
+    "schemes": "Browse schemes",
+    "guides": "Guides",
+    "privacy": "Privacy policy",
+    "terms": "Terms of use",
+    "notFound": "Page not found",
+    "body": "This page is still being built.",
+    "back": "Back to home"
+  },
+  "app": {
+    "nav": {
+      "label": "App",
+      "home": "Home",
+      "matches": "My matches",
+      "applications": "My applications",
+      "browse": "Browse"
+    },
+    "sidebarNote": {
+      "title": "Guide and list, not apply",
+      "body": "We tell you what to prepare and where to go. You apply on the official portal yourself."
+    },
+    "sampleData": "Showing sample data until the Fundora API is connected.",
+    "loading": "Loading schemes…",
+    "loadError": "We couldn't load schemes. Check your connection and try again.",
+    "retry": "Try again",
+    "newTab": "(opens in a new tab)",
+    "match": {
+      "eligible": "Eligible",
+      "almost": "Almost eligible",
+      "not": "Not eligible",
+      "unknown": "Need more info"
+    },
+    "mode": {
+      "online": "Online only",
+      "onlineAndOffline": "Online + offline"
+    },
+    "aid": {
+      "all": "All aid",
+      "scholarship": "Scholarships",
+      "loan": "Education loans",
+      "feeWaiver": "Fee waivers",
+      "device": "Laptops & devices",
+      "hostel": "Hostel & food",
+      "books": "Books & small aids"
+    },
+    "aidSingular": {
+      "scholarship": "Scholarship",
+      "loan": "Education loan",
+      "feeWaiver": "Fee waiver",
+      "device": "Laptop & device",
+      "hostel": "Hostel & food",
+      "books": "Books & small aid"
+    },
+    "provider": {
+      "central": "Central government",
+      "state": "State government",
+      "private": "Private, CSR & colleges",
+      "bank": "Banks"
+    },
+    "deadline": {
+      "closes": "Closes {{date}}",
+      "daysLeft_one": "{{count}} day left",
+      "daysLeft_other": "{{count}} days left",
+      "rolling": "Apply any time",
+      "closed": "Closed"
+    },
+    "card": {
+      "details": "Details",
+      "viewDetails": "View details",
+      "officialSite": "Official site",
+      "officialSiteFor": "for {{name}}"
+    },
+    "dashboard": {
+      "docTitle": "Dashboard · Fundora",
+      "eyebrow": "Your dashboard",
+      "title": "Help exists. Here’s yours.",
+      "summary": "Summary",
+      "stats": {
+        "eligible": "Eligible for",
+        "eligibleSub": "open schemes you can apply for",
+        "closing": "Closing in 14 days",
+        "closingSub": "of your eligible schemes",
+        "offline": "Offline visits needed",
+        "offlineSub": "saved schemes need hard copies in person",
+        "saved": "Saved to apply",
+        "savedSub": "schemes in My applications"
+      },
+      "popular": {
+        "eyebrow": "01 · Popular now",
+        "title": "Popular scholarships",
+        "all": "Browse all schemes",
+        "top": "#1 this month"
+      },
+      "apps": {
+        "eyebrow": "02 · In progress",
+        "title": "My applications",
+        "all": "Open all applications",
+        "viewAll_one": "View your saved scheme",
+        "viewAll_other": "View all {{count}} saved schemes",
+        "viewAllSub": "Full details and official documents for each",
+        "empty": "You haven’t saved any schemes yet.",
+        "emptyCta": "Browse schemes"
+      }
+    },
+    "browse": {
+      "docTitle": "Browse · Fundora",
+      "matchesDocTitle": "My matches · Fundora",
+      "title": "Browse",
+      "subtitle": "Every scholarship, loan, fee waiver and aid for undergraduate students, checked against your profile.",
+      "matchesTitle": "My matches",
+      "matchesSubtitle": "Schemes you qualify for or nearly qualify for, best first.",
+      "searchLabel": "Search schemes",
+      "searchPlaceholder": "Search by name, provider or keyword…",
+      "sortLabel": "Sort results",
+      "sort": {
+        "best": "Best match first",
+        "closing": "Closing soonest",
+        "popular": "Most popular"
+      },
+      "typesLabel": "Type of aid",
+      "filters": "Filters",
+      "reset": "Reset",
+      "openNow": "Open for applications now",
+      "providerLegend": "Who provides it",
+      "groupsLegend": "Special groups",
+      "groups": {
+        "girls": "For girls",
+        "disability": "Students with disability",
+        "rural": "Rural / first-generation"
+      },
+      "eligLabel": "Show by eligibility",
+      "all": "All",
+      "results_one": "{{count}} result",
+      "results_other": "{{count}} results",
+      "bestMatch": "Best match",
+      "whyLabel": "Why this result",
+      "emptyTitle": "Nothing matches these filters",
+      "emptyBody": "Try another type of aid or switch eligibility to All.",
+      "footnote": "Fundora is not affiliated with any government body or provider. “Official site” opens the scheme’s own website, where you apply yourself."
+    },
+    "applications": {
+      "docTitle": "My applications · Fundora",
+      "title": "My applications",
+      "subtitle": "Schemes you saved to apply for. Open one for everything you need, then apply on its official website.",
+      "breadcrumb": "Breadcrumb",
+      "searchLabel": "Search saved schemes",
+      "searchPlaceholder": "Search saved schemes…",
+      "sortLabel": "Sort saved schemes",
+      "sort": {
+        "closing": "Closing soonest",
+        "saved": "Recently saved"
+      },
+      "add": "Save a scheme",
+      "addBody": "Find a scheme in Browse and save it to keep its details and deadline here.",
+      "tabsLabel": "Filter saved schemes",
+      "filters": {
+        "all": "All",
+        "closingSoon": "Closing soon",
+        "open": "Open",
+        "offline": "Needs offline visit",
+        "closed": "Closed"
+      },
+      "docsNeeded_one": "{{count}} document needed",
+      "docsNeeded_other": "{{count}} documents needed",
+      "fullDetails": "Full details",
+      "remove": "Remove {{name}} from My applications",
+      "removeShort": "Remove",
+      "empty": "No saved schemes match this filter.",
+      "remindersTitle": "Deadline reminders",
+      "remindersBody": "We email you 7 days and 1 day before each saved scheme’s deadline. You always apply on the official site."
+    },
+    "drawer": {
+      "close": "Close details",
+      "award": "Award",
+      "deadline": "Deadline",
+      "submit": "How to submit",
+      "tabsLabel": "Scheme details",
+      "tabs": {
+        "documents": "Documents",
+        "steps": "How to apply",
+        "offline": "Offline submission"
+      },
+      "stepsBadge_one": "{{count}} step",
+      "stepsBadge_other": "{{count}} steps",
+      "offlineRequired": "Required",
+      "offlineNotNeeded": "Not needed",
+      "offline": {
+        "required": "Offline submission required",
+        "where": "Where",
+        "when": "By when",
+        "carry": "What to carry"
+      },
+      "noOffline": {
+        "title": "No offline visit needed",
+        "body": "Everything is uploaded on the portal. Your college verifies it online."
+      },
+      "open": "Open {{portal}}",
+      "footnote": "Opens {{domain}} in a new tab. Fundora never asks for your portal password and never charges a fee.",
+      "save": "Save to My applications",
+      "saved": "Saved in My applications",
+      "fullDetails": "See full details and official documents"
+    },
+    "deadlineStatus": {
+      "closingSoon": "Closing soon",
+      "open": "Open",
+      "rolling": "Open all year",
+      "closed": "Closed"
+    },
+    "detail": {
+      "notFound": "We couldn’t find this scheme.",
+      "backToApplications": "Back to My applications",
+      "backToBrowse": "Back to Browse",
+      "onThisPage": "On this page",
+      "sections": {
+        "overview": "About this scheme",
+        "eligibility": "Eligibility",
+        "documents": "Documents required",
+        "steps": "How to apply",
+        "offline": "Offline submission",
+        "official": "Official documents",
+        "dates": "Important dates",
+        "help": "Help and contact"
+      },
+      "benefits": "What you get",
+      "rule": {
+        "met": "You meet this",
+        "notMet": "Not met",
+        "unknown": "Need info"
+      },
+      "documentsIntro": "Keep these ready before you open the official portal.",
+      "officialIntro": "Guidelines, notifications and FAQs published by the scheme. They open on the official website ({{portal}}).",
+      "docKind": {
+        "notification": "Notification",
+        "guidelines": "Guidelines",
+        "faq": "FAQ",
+        "manual": "User manual",
+        "form": "Form / format"
+      },
+      "format": {
+        "pdf": "PDF",
+        "web": "Web page"
+      },
+      "helpNote": "For questions about your application, contact {{provider}} directly. Fundora can’t see or change your application.",
+      "verified": "Details last checked against the official source on {{date}}.",
+      "report": "Report wrong info"
+    }
+  }
+}

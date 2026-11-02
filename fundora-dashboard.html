@@ -1,0 +1,1493 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fundora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!--
+  FUNDORA: standalone prototype (dashboard + My applications + scheme details)
+  ---------------------------------------------------------------------------
+  Open this file in a browser (double-click). No build step needed.
+
+  Pages (switch with the sidebar; the address bar shows which one):
+    #home              Dashboard
+    #applications      My applications: the schemes the student saved to apply for
+    #matches           My matches: every scheme the student is eligible (or almost eligible) for
+    #browse            Browse: search Fundora's list, or search the web for any scheme
+    #scheme/<id>       Full details of one scheme, with official documents
+
+  Web search (Browse): a page opened from disk can't read other websites (browsers
+  block it), so the real search + "fetch details" runs on the backend. Until then
+  WEB_API is empty and Browse shows EXAMPLE web results. Set WEB_API to your
+  backend's address (e.g. 'http://localhost:4000/api/v1') to use the real thing.
+
+  How it's organised:
+    1. <style>  : colours live in :root at the top. Change them once there.
+    2. <body>   : the sidebar and one empty <main>; each page is drawn into it.
+    3. <script> : SCHEMES and SAVED lists at the top hold all the data.
+                  Below them: helpers, then one render function per page.
+
+  Fundora guides and lists, it never applies. So there is NO tracking of
+  uploads, progress or application status here: only what each scheme needs
+  and a link to its official portal.
+
+  All data is EXAMPLE content for the UI. Amounts, limits, dates, helplines and
+  document links are not verified; real values will come from the backend.
+-->
+<style>
+  /* ---------- 1. Design tokens (from the Fundora deck) ---------- */
+  :root {
+    --red: #D63229;          /* brand red */
+    --red-dark: #B3231C;     /* red for small text and gradients */
+    --red-soft: #FBE7E5;
+    --cream: #F2EEE8;        /* page background */
+    --cream-2: #E9E3DA;
+    --line: #E2DCD3;         /* borders */
+    --ink: #161616;          /* headings, sidebar */
+    --muted: #5A5A5A;        /* body text */
+    --white: #FFFFFF;
+
+    --eligible: #1C6332;  --eligible-bg: #E3F1E6;
+    --almost:   #7A4A00;  --almost-bg:   #FBEBCB;
+    --info:     #1F4E79;  --info-bg:     #E2EEF8;
+    --not:      #9B2C2C;  --not-bg:      #FBE8E8;
+
+    --radius: 20px;
+    --font: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; font-family: var(--font); background: var(--cream); color: var(--ink); }
+  a { color: var(--red-dark); }
+  button, input, select { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  /* ---------- Layout: sidebar + main ---------- */
+  .app { display: flex; min-height: 100vh; }
+  .sidebar {
+    width: 256px; flex-shrink: 0; background: var(--ink); color: var(--white);
+    padding: 24px 16px; display: flex; flex-direction: column; gap: 28px;
+    position: sticky; top: 0; height: 100vh;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; color: var(--white); text-decoration: none; padding: 0 8px; }
+  .logo span { font-weight: 800; font-size: 20px; letter-spacing: -0.4px; }
+  .nav { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+  .nav a {
+    display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px;
+    border-radius: 12px; color: #D8D3CC; text-decoration: none; font-weight: 500;
+  }
+  .nav a:hover { background: rgba(255,255,255,0.08); }
+  .nav a[aria-current="page"] { background: var(--red); color: var(--white); font-weight: 600; }
+  .side-note { margin-top: auto; border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 16px; }
+  .side-note .eyebrow { color: #F4A9A3; }
+  .side-note p { margin: 8px 0 0; font-size: 14px; line-height: 1.55; color: #D8D3CC; }
+
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .banner { margin: 0; background: var(--almost-bg); color: var(--almost); text-align: center; font-size: 14px; font-weight: 500; padding: 8px 16px; }
+  .content { width: 100%; max-width: 1180px; margin: 0 auto; padding: 32px 40px 64px; display: flex; flex-direction: column; gap: 40px; }
+  .content.tight { gap: 24px; }
+
+  /* ---------- Shared bits ---------- */
+  .eyebrow { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+  h1 { margin: 8px 0 0; font-size: 38px; font-weight: 800; letter-spacing: -1.2px; line-height: 1.1; }
+  h2 { margin: 8px 0 0; font-size: 26px; font-weight: 800; letter-spacing: -0.6px; }
+  .lead { margin: 10px 0 0; font-size: 18px; line-height: 1.55; color: var(--muted); max-width: 680px; }
+  .section-head { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; margin-bottom: 16px; }
+  .section-head > div { margin-right: auto; }
+  .more-link { display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; text-decoration: none; }
+  .more-link:hover { text-decoration: underline; }
+  .back-link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-size: 14px; font-weight: 600; color: var(--muted); text-decoration: none; align-self: flex-start; }
+  .back-link:hover { color: var(--ink); }
+  .card { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); }
+  .muted { color: var(--muted); }
+
+  .pill { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 4px 10px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .pill.eligible { background: var(--eligible-bg); color: var(--eligible); }
+  .pill.almost   { background: var(--almost-bg);   color: var(--almost); }
+  .pill.unknown  { background: var(--info-bg);     color: var(--info); }
+  .pill.not      { background: var(--cream-2);     color: var(--ink); }
+  .pill.mode     { background: var(--cream-2);     color: var(--ink); font-size: 12px; }
+  .pill.mode.offline { background: var(--ink);     color: var(--white); }
+  /* Deadline tags: worked out from the scheme's dates, not from anything the student did */
+  .pill.dl-closingSoon { background: var(--not-bg);      color: var(--not);      font-size: 12px; font-weight: 700; }
+  .pill.dl-open        { background: var(--eligible-bg); color: var(--eligible); font-size: 12px; font-weight: 700; }
+  .pill.dl-rolling     { background: var(--info-bg);     color: var(--info);     font-size: 12px; font-weight: 700; }
+  .pill.dl-closed      { background: var(--cream-2);     color: var(--ink);      font-size: 12px; font-weight: 700; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 12px; font-weight: 600; font-size: 15px; text-decoration: none; border: 1.5px solid transparent; white-space: nowrap; }
+  .btn-red { background: var(--red); color: var(--white); }
+  .btn-red:hover { background: var(--red-dark); }
+  .btn-white { background: var(--white); color: var(--ink); }
+  .btn-dark { background: var(--ink); color: var(--white); }
+  .btn-outline { background: var(--white); color: var(--ink); border-color: var(--ink); }
+  .btn-outline:hover { background: var(--cream); }
+  .icon-btn { width: 36px; height: 36px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); display: inline-flex; align-items: center; justify-content: center; }
+  .icon-btn:hover { background: var(--cream); color: var(--ink); }
+
+  /* ---------- Search / toolbar ---------- */
+  .page-head { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; }
+  .page-head > div { margin-right: auto; }
+  .search { position: relative; width: 320px; max-width: 100%; }
+  .search svg { position: absolute; left: 14px; top: 15px; color: var(--muted); }
+  .search input { width: 100%; height: 48px; border-radius: 12px; border: 1px solid var(--line); background: var(--white); padding: 0 16px 0 42px; font-size: 15px; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 12px; }
+  .toolbar .search { flex: 1 1 280px; width: auto; }
+  .toolbar select { height: 48px; border-radius: 12px; border: 1px solid var(--line); background: var(--white); padding: 0 12px; font-weight: 500; }
+  .toolbar .btn { min-height: 48px; }
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+  .filter { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--white); font-size: 14px; font-weight: 600; }
+  .filter[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--white); }
+  .filter .count { border-radius: 999px; padding: 0 8px; font-size: 12px; background: var(--cream-2); }
+  .filter[aria-pressed="true"] .count { background: rgba(255,255,255,0.2); }
+
+  /* ---------- Stats ---------- */
+  .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+  .stat { padding: 20px; display: flex; flex-direction: column; gap: 6px; }
+  .stat .label { font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  .stat .value { font-size: 38px; font-weight: 800; letter-spacing: -1px; }
+  .stat .sub { font-size: 14px; color: var(--muted); }
+  .stat.red { background: var(--red); border-color: var(--red); color: var(--white); }
+  .stat.red .label, .stat.red .sub { color: rgba(255,255,255,0.92); }
+
+  /* ---------- Popular scholarships (bento grid) ---------- */
+  .bento { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .featured {
+    grid-row: span 2; min-height: 400px; border-radius: 24px; padding: 28px; color: var(--white);
+    background: linear-gradient(160deg, var(--red), var(--red-dark));
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .featured .eyebrow { color: var(--white); }
+  .featured h3 { margin: 0; font-size: 32px; line-height: 1.08; font-weight: 800; letter-spacing: -0.9px; }
+  .featured .provider { margin: 0; color: rgba(255,255,255,0.85); }
+  .featured .bottom { margin-top: auto; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
+  .featured .amount { font-size: 24px; font-weight: 800; }
+  .featured .deadline { font-size: 14px; color: rgba(255,255,255,0.85); }
+  .featured .pill.mode { background: var(--red-dark); color: var(--white); }
+
+  .scheme { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+  .scheme .top { display: flex; align-items: center; gap: 12px; }
+  .icon-tile { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: var(--cream-2); }
+  .scheme .type { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .scheme h3 { margin: 0; font-size: 17px; line-height: 1.3; font-weight: 700; }
+  .scheme .provider { margin: 2px 0 0; font-size: 14px; color: var(--muted); }
+  .scheme .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .scheme .bottom { margin-top: auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+  .scheme .amount { font-weight: 700; }
+  .scheme .deadline { font-size: 13px; color: var(--muted); }
+
+  /* ---------- My applications cards ---------- */
+  .apps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .app-card { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .app-card .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .app-card .num { font-size: 20px; font-weight: 800; color: var(--red-dark); }
+  .app-card .title { display: flex; align-items: flex-start; gap: 12px; }
+  .app-card h3 { margin: 0; font-size: 17px; line-height: 1.3; font-weight: 700; }
+  .app-card .provider { margin: 2px 0 0; font-size: 14px; color: var(--muted); }
+  .facts-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0; background: var(--cream); border-radius: 12px; padding: 14px; font-size: 14px; }
+  .facts-mini dt { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .facts-mini dd { margin: 3px 0 0; font-weight: 600; }
+  .needs { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 14px; color: var(--muted); margin: 0; }
+  .needs span { display: inline-flex; align-items: center; gap: 6px; }
+  .app-card .actions { margin-top: auto; display: flex; flex-wrap: wrap; gap: 8px; }
+  .app-card .actions .btn-red { flex: 1 1 140px; }
+  .add-card { border: 1.5px dashed var(--line); border-radius: var(--radius); background: rgba(255,255,255,0.6); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; min-height: 260px; text-decoration: none; color: var(--ink); text-align: center; padding: 28px; }
+  .add-card .plus { width: 56px; height: 56px; border-radius: 999px; background: var(--cream-2); display: flex; align-items: center; justify-content: center; color: var(--muted); }
+  .add-card strong { font-size: 18px; }
+  .add-card small { color: var(--muted); font-size: 14px; max-width: 260px; }
+  .empty { text-align: center; color: var(--muted); padding: 32px 0; }
+  .reminders { border-top: 1px solid var(--line); padding-top: 24px; }
+  .reminders h2 { font-size: 20px; margin: 0; }
+  .reminders p { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
+
+  /* ---------- Scheme details page ---------- */
+  .hero { border-radius: 24px; padding: 36px; color: var(--white); background: linear-gradient(160deg, var(--red), var(--red-dark)); display: flex; flex-direction: column; gap: 18px; }
+  .hero .eyebrow { color: var(--white); }
+  .hero h1 { margin: 0; font-size: 46px; max-width: 820px; }
+  .hero .pill.mode { background: var(--red-dark); color: var(--white); }
+  .reason { background: var(--white); color: var(--ink); border-radius: 16px; padding: 14px; display: flex; gap: 12px; align-items: flex-start; max-width: 820px; }
+  .reason p { margin: 3px 0 0; line-height: 1.5; }
+  .hero-facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin: 0; border-radius: 16px; overflow: hidden; background: rgba(255,255,255,0.25); }
+  .hero-facts div { background: rgba(179,35,28,0.6); padding: 12px 16px; }
+  .hero-facts dt { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.9; }
+  .hero-facts dd { margin: 4px 0 0; font-weight: 700; }
+  .detail-grid { display: flex; gap: 32px; align-items: flex-start; }
+  .detail-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 48px; }
+  .detail-main section { scroll-margin-top: 24px; }
+  .detail-main h2 { margin: 0 0 16px; }
+  .detail-side { width: 320px; flex-shrink: 0; position: sticky; top: 24px; display: flex; flex-direction: column; gap: 16px; }
+  .action-card { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+  .action-card .btn { min-height: 50px; border-radius: 14px; white-space: normal; text-align: center; }
+  .action-card small { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .action-card .verified { border-top: 1px solid var(--line); padding-top: 12px; }
+  .toc { padding: 20px; }
+  .toc ul { list-style: none; margin: 8px 0 0; padding: 0; }
+  .toc a { display: block; padding: 8px; border-radius: 8px; font-size: 14px; font-weight: 500; color: var(--ink); text-decoration: none; }
+  .toc a:hover { background: var(--cream); }
+  .about { margin: 0; font-size: 18px; line-height: 1.6; max-width: 70ch; }
+  .benefits { margin-top: 18px; padding: 20px; }
+  .tick-list { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .tick-list li { display: flex; gap: 10px; }
+  .tick-list svg { color: var(--eligible); flex-shrink: 0; margin-top: 1px; }
+  .rules { list-style: none; margin: 0; padding: 0; }
+  .rules li { display: flex; gap: 12px; align-items: flex-start; padding: 16px; border-bottom: 1px solid var(--line); }
+  .rules li:last-child { border-bottom: 0; }
+  .rules span.rule { flex: 1; }
+  .rules .met { color: var(--eligible); } .rules .notMet { color: var(--not); } .rules .unknown { color: var(--info); }
+  .rules .verdict { font-size: 14px; font-weight: 600; white-space: nowrap; }
+  .doc-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .doc-list li { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; }
+  .doc-list .n { width: 28px; height: 28px; flex-shrink: 0; border-radius: 999px; background: var(--red-soft); color: var(--red-dark); font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .doc-list strong, .steps strong { display: block; }
+  .doc-list small, .steps small { display: block; color: var(--muted); font-size: 14px; margin-top: 2px; }
+  .steps { list-style: none; margin: 0; padding: 0; }
+  .steps li { display: flex; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .steps li:last-child { border-bottom: 0; }
+  .steps .n { width: 36px; flex-shrink: 0; font-size: 22px; font-weight: 800; color: var(--red-dark); }
+  .offline-box { background: var(--ink); color: var(--white); border-radius: 16px; padding: 18px; }
+  .offline-box .eyebrow { color: #F4A9A3; }
+  .offline-box p { margin: 8px 0 0; font-weight: 600; line-height: 1.45; }
+  .stack { display: flex; flex-direction: column; gap: 10px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .box { padding: 14px 16px; }
+  .box .eyebrow { font-size: 11px; }
+  .box p { margin: 6px 0 0; font-size: 14px; font-weight: 600; }
+  .box ul { margin: 8px 0 0; padding-left: 18px; font-size: 14px; line-height: 1.7; }
+  .box li::marker { color: var(--red); }
+  .tip { margin: 0; background: var(--almost-bg); color: var(--almost); border-radius: 12px; padding: 12px 14px; font-size: 14px; }
+  .off-docs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .off-docs a { display: flex; align-items: center; gap: 16px; padding: 16px; text-decoration: none; color: var(--ink); }
+  .off-docs a:hover { border-color: var(--ink); }
+  .off-docs a:hover strong { text-decoration: underline; }
+  .off-docs .ic { width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0; background: var(--red-soft); color: var(--red-dark); display: flex; align-items: center; justify-content: center; }
+  .off-docs .txt { flex: 1; min-width: 0; }
+  .off-docs small { display: block; color: var(--muted); font-size: 14px; margin-top: 2px; }
+  .timeline { list-style: none; margin: 0; padding: 0 0 0 24px; border-left: 2px solid var(--line); }
+  .timeline li { position: relative; padding-bottom: 20px; }
+  .timeline li:last-child { padding-bottom: 0; }
+  .timeline li::before { content: ''; position: absolute; left: -31px; top: 5px; width: 12px; height: 12px; border-radius: 999px; background: var(--red); border: 2px solid var(--cream); }
+  .timeline small { color: var(--muted); font-weight: 600; font-size: 14px; }
+  .timeline strong { display: block; }
+  .help { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+  .help p { margin: 0; display: flex; align-items: center; gap: 10px; }
+  .help small { color: var(--muted); font-size: 14px; }
+
+  /* ---------- My matches + Browse ---------- */
+  .card-reason { margin: 0; font-size: 14px; line-height: 1.5; color: var(--muted); }
+  .featured .card-reason { color: rgba(255,255,255,0.9); }
+  .card-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .big-search { display: flex; gap: 10px; flex-wrap: wrap; }
+  .big-search .search { flex: 1 1 320px; width: auto; }
+  .big-search .search input { height: 56px; font-size: 17px; border-radius: 16px; padding-left: 46px; }
+  .big-search .search svg { top: 19px; left: 16px; }
+  .big-search .btn { min-height: 56px; border-radius: 16px; padding: 0 26px; }
+  .web-panel { padding: 22px; display: flex; flex-direction: column; gap: 14px; }
+  .web-panel .head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .web-panel .head > div { margin-right: auto; }
+  .web-panel h3 { margin: 4px 0 0; font-size: 20px; }
+  .web-note { margin: 0; font-size: 14px; color: var(--almost); background: var(--almost-bg); border-radius: 12px; padding: 10px 12px; }
+  .web-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .web-item { border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px; background: var(--white); }
+  .web-item .src { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .web-item h4 { margin: 0; font-size: 17px; }
+  .web-item p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--muted); }
+  .fetched { background: var(--cream); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .fetched dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0; font-size: 14px; }
+  .fetched dt { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .fetched dd { margin: 3px 0 0; font-weight: 600; }
+  .spinner { width: 18px; height: 18px; border-radius: 999px; border: 2px solid var(--line); border-top-color: var(--red); animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .unverified { margin: 0; background: var(--almost-bg); color: var(--almost); border-radius: 16px; padding: 14px 16px; font-size: 15px; line-height: 1.5; }
+
+  /* ---------- Details drawer (dashboard quick view) ---------- */
+  dialog.drawer {
+    margin: 0 0 0 auto; padding: 0; border: 0; width: 100%; max-width: 600px;
+    height: 100vh; max-height: 100vh; background: var(--cream); color: var(--ink);
+  }
+  dialog.drawer::backdrop { background: rgba(22,22,22,0.45); }
+  .drawer-inner { min-height: 100%; display: flex; flex-direction: column; }
+  .drawer-head { background: var(--red); color: var(--white); padding: 20px 28px 26px; display: flex; flex-direction: column; gap: 14px; }
+  .drawer-head .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .drawer-head .eyebrow { color: var(--white); }
+  .drawer-head h2 { margin: 0; font-size: 30px; line-height: 1.1; }
+  .close { width: 44px; height: 44px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.5); background: transparent; color: var(--white); display: flex; align-items: center; justify-content: center; }
+  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border-bottom: 1px solid var(--line); margin: 0; }
+  .facts div { background: var(--white); padding: 14px 16px; }
+  .facts dt { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .facts dd { margin: 4px 0 0; font-size: 14px; font-weight: 700; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; padding: 18px 28px 0; }
+  .tab { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--white); font-size: 14px; font-weight: 600; }
+  .tab[aria-selected="true"] { background: var(--ink); border-color: var(--ink); color: var(--white); }
+  .tab .badge { border-radius: 999px; padding: 2px 8px; font-size: 11px; font-weight: 700; background: var(--cream-2); color: var(--ink); }
+  .tab[aria-selected="true"] .badge { background: rgba(255,255,255,0.2); color: var(--white); }
+  .tab .badge.warn { background: var(--red); color: var(--white); }
+  .panel { flex: 1; padding: 18px 28px 24px; display: flex; flex-direction: column; gap: 12px; }
+  .full-link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-weight: 700; text-decoration: none; }
+  .full-link:hover { text-decoration: underline; }
+  .drawer-foot { position: sticky; bottom: 0; background: var(--white); border-top: 1px solid var(--line); padding: 16px 28px; display: flex; flex-direction: column; gap: 10px; }
+  .drawer-foot .row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .drawer-foot .btn { min-height: 52px; border-radius: 14px; font-size: 16px; }
+  .drawer-foot .btn-red { flex: 1 1 240px; }
+  .drawer-foot small { font-size: 12px; color: var(--muted); }
+
+  /* ---------- Phones and tablets ---------- */
+  @media (max-width: 1100px) {
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .bento, .apps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .featured { grid-row: auto; grid-column: span 2; min-height: 0; }
+    .detail-grid { flex-direction: column; }
+    .detail-side { width: 100%; position: static; order: -1; }
+    .toc { display: none; }
+  }
+  @media (max-width: 860px) {
+    .app { flex-direction: column; }
+    .sidebar { width: auto; height: auto; position: static; padding: 16px; gap: 14px; }
+    .nav { flex-direction: row; overflow-x: auto; }
+    .nav a { white-space: nowrap; }
+    .side-note { display: none; }
+    .content { padding: 24px 16px 48px; }
+    .hero { padding: 24px; }
+    .hero h1 { font-size: 32px; }
+  }
+  @media (max-width: 600px) {
+    .stats, .bento, .apps, .two, .hero-facts, .facts, .fetched dl { grid-template-columns: minmax(0, 1fr); }
+    .featured { grid-column: auto; }
+    h1 { font-size: 30px; }
+    .search { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ===== Sidebar ===== -->
+  <aside class="sidebar">
+    <a class="logo" href="#home">
+      <svg width="34" height="34" viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="18" fill="#D63229"/><path d="M18 9v18M10.2 13.5l15.6 9M10.2 22.5l15.6-9" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/></svg>
+      <span>Fundora</span>
+    </a>
+    <nav aria-label="App">
+      <ul class="nav">
+        <li><a href="#home" data-nav="home">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-6 8 6v8a1 1 0 01-1 1h-4v-5H9v5H5a1 1 0 01-1-1v-8z"/></svg>Home</a></li>
+        <li><a href="#matches" data-nav="matches">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/></svg>My matches</a></li>
+        <li><a href="#applications" data-nav="applications">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>My applications</a></li>
+        <li><a href="#browse" data-nav="browse">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M15.5 8.5l-2 5-5 2 2-5 5-2z"/></svg>Browse</a></li>
+      </ul>
+    </nav>
+    <div class="side-note">
+      <p class="eyebrow">Guide and list, not apply</p>
+      <p>We tell you what to prepare and where to go. You apply on the official portal yourself.</p>
+    </div>
+  </aside>
+
+  <!-- ===== Main area: each page is drawn into #view ===== -->
+  <div class="main">
+    <p class="banner" role="note">Prototype with example data. Amounts, dates and links are not verified.</p>
+    <main class="content" id="view" tabindex="-1"></main>
+  </div>
+</div>
+
+<!-- ===== Quick-view drawer used on the dashboard ===== -->
+<dialog class="drawer" id="drawer" aria-labelledby="drawer-title"></dialog>
+
+<script>
+/* =====================================================================
+   2. DATA: edit these lists to change what the pages show.
+   ===================================================================== */
+
+// type: scholarship | loan | feeWaiver | device | hostel | books
+// match: eligible | almost | unknown | not
+// mode: online | onlineAndOffline
+// closesInDays: days from today (negative = already closed), or null for "open all year"
+// eligibility result: met | notMet | unknown
+// officialDocuments kind: notification | guidelines | faq | manual | form ; format: pdf | web
+// importantDates: { label, inDays } where inDays is days from today
+const SCHEMES = [
+  {
+    id: 'aicte-pragati',
+    name: 'AICTE Pragati Scholarship for Girls',
+    provider: 'AICTE',
+    type: 'scholarship',
+    amount: '₹50,000 / year',
+    closesInDays: 9,
+    mode: 'online',
+    portal: { name: 'National Scholarship Portal', url: 'https://scholarships.gov.in' },
+    match: 'eligible',
+    reason: 'Your course, college, family income and year of study meet every rule.',
+    popularity: 1,
+    about: 'A merit-cum-means scholarship from AICTE for girl students in the first year (or second year via lateral entry) of an AICTE-approved degree or diploma course. It aims to help girls continue technical education.',
+    benefits: ['₹50,000 every year for up to 4 years', 'Paid directly to your bank account (DBT)', 'Can be renewed each year if you pass and keep attendance'],
+    eligibility: [
+      ['Girl student in the first year of an AICTE-approved course', 'met'],
+      ['Family income up to ₹8 lakh a year', 'met'],
+      ['Admitted through the centralised admission process', 'met'],
+      ['Not more than two girls per family', 'unknown'],
+    ],
+    documents: [
+      ['Class 12 marks card', 'Self-attested scan, PDF.'],
+      ['Family income certificate', 'Issued by the Tahsildar or competent authority for the current financial year.'],
+      ['Admission letter or college ID', 'Shows your course and year of admission.'],
+      ['Tuition fee receipt', 'For the current academic year.'],
+      ['Bank passbook front page', 'Account in your own name, seeded with Aadhaar.'],
+      ['Bonafide certificate', 'Signed by your principal on college letterhead.'],
+    ],
+    steps: [
+      ['Register on the portal', 'Create a one-time registration with your mobile number and email.'],
+      ['Fill the application', 'Choose the scheme and enter your academic and family details.'],
+      ['Upload documents', 'Upload every document listed above as clear scans.'],
+      ['Submit and download', 'Submit before the deadline and save the application PDF.'],
+      ['College verification', 'Your college verifies it online. Track the status on the portal.'],
+    ],
+    offline: null,
+    officialDocuments: [
+      ['Scheme guidelines 2026-27', 'guidelines', 'pdf', 'https://www.aicte-india.org'],
+      ['Notification inviting applications', 'notification', 'pdf', 'https://www.aicte-india.org'],
+      ['NSP student user manual', 'manual', 'pdf', 'https://scholarships.gov.in'],
+      ['Income certificate format', 'form', 'pdf', 'https://scholarships.gov.in'],
+      ['Frequently asked questions', 'faq', 'web', 'https://scholarships.gov.in'],
+    ],
+    importantDates: [
+      { label: 'Applications open', inDays: -20 },
+      { label: 'Last date to apply', inDays: 9 },
+      { label: 'College verification ends', inDays: 24 },
+    ],
+    helpline: { phone: '0120-6619540 (NSP helpdesk)', email: 'helpdesk@nsp.gov.in', hours: 'Example hours: Mon–Sat, 8 am – 8 pm' },
+  },
+  {
+    id: 'central-sector',
+    name: 'Central Sector Scheme of Scholarship',
+    provider: 'Ministry of Education',
+    type: 'scholarship',
+    amount: '₹12,000 / year',
+    closesInDays: 21,
+    mode: 'online',
+    portal: { name: 'National Scholarship Portal', url: 'https://scholarships.gov.in' },
+    match: 'eligible',
+    reason: 'Your Class 12 percentile and family income meet the rules.',
+    popularity: 2,
+    about: 'A central scholarship for students who scored above the 80th percentile in their Class 12 board exams and are studying a regular degree course. It is renewable every year.',
+    benefits: ['₹12,000 a year for the first three years of a degree', '₹20,000 a year after that', 'Paid directly to your bank account (DBT)'],
+    eligibility: [
+      ['Above the 80th percentile in your Class 12 board', 'met'],
+      ['Family income up to ₹4.5 lakh a year', 'met'],
+      ['Studying a regular (not distance) course', 'met'],
+      ['Not receiving another scholarship', 'unknown'],
+    ],
+    documents: [
+      ['Class 12 marks card', 'Shows your percentile in the board results.'],
+      ['Family income certificate', 'For the current financial year.'],
+      ['Bonafide certificate', 'From your college.'],
+      ['Bank passbook front page', 'Account in your own name.'],
+    ],
+    steps: [
+      ['Register on the portal', 'One-time registration with your mobile and email.'],
+      ['Apply for the scheme', 'Pick the scheme and fill in your details.'],
+      ['Upload and submit', 'Upload documents and submit before the deadline.'],
+      ['College verification', 'Your college verifies online. Renew every year.'],
+    ],
+    offline: null,
+    officialDocuments: [
+      ['Scheme guidelines', 'guidelines', 'pdf', 'https://scholarships.gov.in'],
+      ['Board-wise percentile cut-offs', 'notification', 'pdf', 'https://scholarships.gov.in'],
+      ['Frequently asked questions', 'faq', 'web', 'https://scholarships.gov.in'],
+    ],
+    importantDates: [
+      { label: 'Applications open', inDays: -15 },
+      { label: 'Last date to apply', inDays: 21 },
+    ],
+  },
+  {
+    id: 'ssp-post-matric',
+    name: 'Post-Matric Scholarship (SSP)',
+    provider: 'Government of Karnataka',
+    type: 'scholarship',
+    amount: 'Fees + ₹13,500 / year',
+    closesInDays: 12,
+    mode: 'onlineAndOffline',
+    portal: { name: 'SSP Karnataka portal', url: 'https://ssp.karnataka.gov.in' },
+    match: 'almost',
+    reason: 'You need a caste and income certificate (RD number) issued this year.',
+    popularity: 3,
+    about: 'Karnataka’s post-matric scholarship for eligible category students in courses after Class 10. Applications and renewals happen on the State Scholarship Portal (SSP), followed by verification at your college.',
+    benefits: ['Fee reimbursement as per the government fee structure', 'Maintenance allowance of ₹13,500 a year (example)', 'Renewed every year of the course'],
+    eligibility: [
+      ['Resident of Karnataka', 'met'],
+      ['Belongs to an eligible category', 'met'],
+      ['Family income up to ₹2.5 lakh a year', 'met'],
+      ['Valid caste & income certificate (RD number) for this year', 'notMet'],
+    ],
+    documents: [
+      ['SATS / student ID number', 'From your previous school or college records.'],
+      ['Caste & income certificate (RD number)', 'Issued by Nadakacheri for the current year.'],
+      ['Previous year marks card', 'Self-attested copy.'],
+      ['Fee receipt', 'For the current academic year.'],
+      ['Hostel certificate', 'Only if you stay in a hostel.'],
+    ],
+    steps: [
+      ['Log in to SSP', 'Use your SSP student ID from last year to renew.'],
+      ['Update details', 'Enter this year’s course, fees and RD number.'],
+      ['Submit online', 'Submit and download the application printout.'],
+      ['Submit hard copy at college', 'Hand the printout and documents to your college. See Offline submission.'],
+      ['Track verification', 'Your college and the department verify it. Track the status on SSP.'],
+    ],
+    offline: {
+      summary: 'Print your submitted application and hand it to your college scholarship section with copies of your documents.',
+      where: 'Scholarship section, college admin block, 10 am – 4 pm on working days',
+      when: 'Within 7 days of applying online',
+      carry: ['Printout of the submitted application', 'Self-attested copies of every document', 'Originals of your certificates, for checking', 'Fee receipt'],
+      tip: 'Ask for a stamped acknowledgement slip and keep it until the amount is credited.',
+    },
+    officialDocuments: [
+      ['Post-matric scholarship guidelines', 'guidelines', 'pdf', 'https://ssp.karnataka.gov.in'],
+      ['Circular: last dates for 2026-27', 'notification', 'pdf', 'https://ssp.karnataka.gov.in'],
+      ['How to apply on SSP (student guide)', 'manual', 'pdf', 'https://ssp.karnataka.gov.in'],
+      ['Frequently asked questions', 'faq', 'web', 'https://ssp.karnataka.gov.in'],
+    ],
+    importantDates: [
+      { label: 'Renewal opens', inDays: -10 },
+      { label: 'Last date to apply online', inDays: 12 },
+      { label: 'Last date to submit hard copy at college', inDays: 19 },
+    ],
+    helpline: { phone: 'Example: 080-1234-5678', email: 'example-helpdesk@ssp.karnataka.gov.in', hours: 'Example hours: Mon–Fri, 10 am – 5:30 pm' },
+  },
+  {
+    id: 'reliance-ug',
+    name: 'Reliance Foundation UG Scholarship',
+    provider: 'Reliance Foundation',
+    type: 'scholarship',
+    amount: 'Up to ₹2,00,000',
+    closesInDays: 30,
+    mode: 'online',
+    portal: { name: 'Reliance Foundation portal', url: 'https://www.reliancefoundation.org' },
+    match: 'almost',
+    reason: 'Needs an aptitude test score. Add it once you have taken the test.',
+    popularity: 4,
+    about: 'Merit-cum-means scholarships from Reliance Foundation for first-year undergraduate students in any stream, selected through an online aptitude test.',
+    benefits: ['Up to ₹2,00,000 over the degree', 'Access to an alumni network and mentoring'],
+    eligibility: [
+      ['First-year undergraduate student in India', 'met'],
+      ['Family income up to ₹15 lakh a year', 'met'],
+      ['Takes the online aptitude test', 'unknown'],
+    ],
+    documents: [
+      ['Class 12 marks card', 'Self-attested scan.'],
+      ['Family income proof', 'Certificate or salary slip.'],
+      ['College admission proof', 'Admission letter or ID card.'],
+    ],
+    steps: [
+      ['Apply online', 'Fill the form on the foundation’s portal.'],
+      ['Take the aptitude test', 'An online test is scheduled after you apply.'],
+      ['Results', 'Selected students are informed by email.'],
+    ],
+    offline: null,
+    officialDocuments: [
+      ['Scholarship details and eligibility', 'guidelines', 'web', 'https://www.reliancefoundation.org'],
+      ['Frequently asked questions', 'faq', 'web', 'https://www.reliancefoundation.org'],
+    ],
+    importantDates: [{ label: 'Last date to apply', inDays: 30 }],
+  },
+  {
+    id: 'vidyasiri',
+    name: 'Vidyasiri food & accommodation assistance',
+    provider: 'Government of Karnataka',
+    type: 'hostel',
+    amount: '₹1,500 / month',
+    closesInDays: 18,
+    mode: 'onlineAndOffline',
+    portal: { name: 'SSP Karnataka portal', url: 'https://ssp.karnataka.gov.in' },
+    match: 'almost',
+    reason: 'You are ₹20,000 above the family income limit.',
+    popularity: 5,
+    about: 'Karnataka’s assistance for students staying away from home who did not get a government hostel seat. It helps with food and accommodation costs.',
+    benefits: ['₹1,500 a month for up to 10 months a year'],
+    eligibility: [
+      ['Resident of Karnataka', 'met'],
+      ['Not staying in a government hostel', 'met'],
+      ['Family income up to ₹1 lakh a year', 'notMet'],
+    ],
+    documents: [
+      ['Caste & income certificate (RD number)', 'Current year.'],
+      ['Proof of staying away from home', 'Rental agreement or hostel letter.'],
+      ['Fee receipt', 'Current academic year.'],
+    ],
+    steps: [
+      ['Apply on SSP', 'Choose Vidyasiri while applying.'],
+      ['Submit and print', 'Download the application printout.'],
+      ['Submit hard copy', 'Hand it to your college scholarship section.'],
+    ],
+    offline: {
+      summary: 'Hand the printed application and document copies to your college scholarship section.',
+      where: 'Scholarship section, college admin block',
+      when: 'Within 7 days of applying online',
+      carry: ['Application printout', 'Self-attested document copies', 'Rental agreement or hostel letter'],
+      tip: 'Keep the acknowledgement slip until the amount is credited.',
+    },
+    officialDocuments: [
+      ['Vidyasiri guidelines', 'guidelines', 'pdf', 'https://ssp.karnataka.gov.in'],
+      ['Frequently asked questions', 'faq', 'web', 'https://ssp.karnataka.gov.in'],
+    ],
+    importantDates: [{ label: 'Last date to apply', inDays: 18 }],
+  },
+]
+
+// The student's saved schemes ("My applications"). Only the id and the day it was saved.
+// savedDaysAgo: how many days ago it was saved (used for "Recently saved" sorting).
+let SAVED = [
+  { schemeId: 'aicte-pragati', savedDaysAgo: 6 },
+  { schemeId: 'ssp-post-matric', savedDaysAgo: 4 },
+  { schemeId: 'central-sector', savedDaysAgo: 3 },
+  { schemeId: 'reliance-ug', savedDaysAgo: 1 },
+  { schemeId: 'vidyasiri', savedDaysAgo: 0 },
+]
+
+// ---- Web search (Browse page) ----
+// Empty = use the EXAMPLE results below. Set to your backend, e.g. 'http://localhost:4000/api/v1'.
+// The backend should offer:
+//   GET {WEB_API}/web-search?q=...     -> [{ title, url, snippet }]
+//   GET {WEB_API}/web-extract?url=...  -> one scheme object shaped like the SCHEMES entries above
+const WEB_API = ''
+
+// EXAMPLE web results so Browse can be tried before the backend exists.
+// Real names, but every value (amounts, dates, documents, links) is an example.
+const DEMO_WEB = [
+  {
+    result: { title: 'Kotak Kanya Scholarship for girl students', url: 'https://www.kotakeducation.org', snippet: 'Scholarship for meritorious girl students from low-income families pursuing professional graduation courses.', keywords: 'kotak kanya girls girl professional engineering' },
+    scheme: {
+      id: 'web-kotak-kanya', name: 'Kotak Kanya Scholarship', provider: 'Kotak Education Foundation', type: 'scholarship',
+      amount: 'Up to ₹1.5 lakh / year', closesInDays: 40, mode: 'online',
+      portal: { name: 'Kotak Education Foundation website', url: 'https://www.kotakeducation.org' },
+      about: 'Supports meritorious girl students from low-income families in professional degree courses such as engineering, medicine and architecture.',
+      benefits: ['Up to ₹1.5 lakh a year for tuition and study costs (example)', 'Renewable every year of the course'],
+      eligibility: [['Girl student in the first year of a professional degree', 'unknown'], ['Family income up to ₹6 lakh a year (example)', 'unknown'], ['Class 12 marks of 75% or more (example)', 'unknown']],
+      documents: [['Class 12 marks card', 'Self-attested copy.'], ['Family income certificate', 'Current financial year.'], ['College admission proof', 'Admission letter or fee receipt.'], ['Bank account details', 'In your own name.']],
+      steps: [['Apply online', 'Fill the form on the official website.'], ['Shortlisting', 'Shortlisted students may get a phone or video interview.'], ['Results', 'Selected students are informed by email.']],
+      offline: null,
+      officialDocuments: [['Scholarship details', 'guidelines', 'web', 'https://www.kotakeducation.org']],
+      importantDates: [{ label: 'Last date to apply (example)', inDays: 40 }],
+    },
+  },
+  {
+    result: { title: 'HDFC Badhte Kadam Scholarship', url: 'https://www.buddy4study.com', snippet: 'Scholarship for students from Class 9 to postgraduate courses facing financial difficulty.', keywords: 'hdfc badhte kadam bank ug graduation' },
+    scheme: {
+      id: 'web-hdfc-badhte-kadam', name: 'HDFC Badhte Kadam Scholarship', provider: 'HDFC Bank', type: 'scholarship',
+      amount: 'Up to ₹1,00,000 (example)', closesInDays: 25, mode: 'online',
+      portal: { name: 'Application page', url: 'https://www.buddy4study.com' },
+      about: 'Financial help for students who have faced a personal or family crisis, from school up to postgraduate study.',
+      benefits: ['One-time award for study costs (example amount)'],
+      eligibility: [['Studying an undergraduate course', 'unknown'], ['Family income up to ₹6 lakh a year (example)', 'unknown'], ['Facing a personal or family crisis', 'unknown']],
+      documents: [['Previous year marks card', 'Self-attested copy.'], ['Family income proof', 'Certificate or salary slip.'], ['Proof of current admission', 'Fee receipt or ID card.']],
+      steps: [['Apply online', 'Fill the form on the application page.'], ['Document check', 'Upload documents when asked.'], ['Interview', 'Shortlisted students get a call.']],
+      offline: null,
+      officialDocuments: [['Scholarship details', 'guidelines', 'web', 'https://www.buddy4study.com']],
+      importantDates: [{ label: 'Last date to apply (example)', inDays: 25 }],
+    },
+  },
+  {
+    result: { title: 'SBI Foundation Asha Scholarship Programme', url: 'https://www.sbifoundation.in', snippet: 'Scholarships for students from low-income families, from school to undergraduate and postgraduate study.', keywords: 'sbi asha bank undergraduate ug' },
+    scheme: {
+      id: 'web-sbi-asha', name: 'SBI Asha Scholarship Programme', provider: 'SBI Foundation', type: 'scholarship',
+      amount: 'Up to ₹50,000 / year (example)', closesInDays: 33, mode: 'online',
+      portal: { name: 'SBI Foundation website', url: 'https://www.sbifoundation.in' },
+      about: 'Scholarships for meritorious students from low-income families, including undergraduate students at recognised colleges.',
+      benefits: ['Yearly scholarship for undergraduate students (example amount)'],
+      eligibility: [['Undergraduate student in India', 'unknown'], ['Previous year marks of 75% or more (example)', 'unknown'], ['Family income up to ₹3 lakh a year (example)', 'unknown']],
+      documents: [['Previous year marks card', 'Self-attested copy.'], ['Family income certificate', 'Current financial year.'], ['Fee receipt', 'Current academic year.'], ['Bank passbook', 'Account in your own name.']],
+      steps: [['Apply online', 'Fill the form on the official website.'], ['Verification', 'Documents are checked.'], ['Results', 'Selected students are informed.']],
+      offline: null,
+      officialDocuments: [['Programme details', 'guidelines', 'web', 'https://www.sbifoundation.in']],
+      importantDates: [{ label: 'Last date to apply (example)', inDays: 33 }],
+    },
+  },
+]
+
+/* =====================================================================
+   3. LABELS AND ICONS
+   ===================================================================== */
+
+const MATCH_LABEL = { eligible: 'Eligible', almost: 'Almost eligible', unknown: 'Need more info', not: 'Not eligible' }
+const MODE_LABEL  = { online: 'Online only', onlineAndOffline: 'Online + offline' }
+const DL_LABEL    = { closingSoon: 'Closing soon', open: 'Open', rolling: 'Open all year', closed: 'Closed' }
+const TYPE_LABEL  = { scholarship: 'Scholarship', loan: 'Education loan', feeWaiver: 'Fee waiver', device: 'Laptop & device', hostel: 'Hostel & food', books: 'Books & small aid' }
+const TYPE_TILE   = { scholarship: '#E3F1E6', loan: '#E2EEF8', feeWaiver: '#FBEBCB', device: '#FBE7E5', hostel: '#E9E3DA', books: '#E3F1E6' }
+const RULE_LABEL  = { met: 'You meet this', notMet: 'Not met', unknown: 'Need info' }
+const KIND_LABEL  = { notification: 'Notification', guidelines: 'Guidelines', faq: 'FAQ', manual: 'User manual', form: 'Form / format' }
+
+const svg = (d, size = 20) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`
+const ICON = {
+  scholarship: svg('<path d="M3 9l9-4 9 4-9 4-9-4z"/><path d="M7 11v4c0 1.5 2.5 3 5 3s5-1.5 5-3v-4"/>'),
+  loan:        svg('<path d="M4 20h16M5 10h14M12 4l8 5H4l8-5zM7 10v8M12 10v8M17 10v8"/>'),
+  feeWaiver:   svg('<path d="M3 12V4h8l9 9-8 8-9-9z"/><circle cx="7.5" cy="7.5" r="1.2"/>'),
+  device:      svg('<rect x="5" y="5" width="14" height="10" rx="1.5"/><path d="M3 19h18"/>'),
+  hostel:      svg('<path d="M3 18V7M3 13h18v5M21 13a3 3 0 00-3-3h-7v3"/><circle cx="7" cy="10.5" r="1.8"/>'),
+  books:       svg('<path d="M5 4h5a2 2 0 012 2v14a2 2 0 00-2-2H5V4zM19 4h-5a2 2 0 00-2 2v14a2 2 0 012-2h5V4z"/>'),
+  check:       svg('<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.8"/>', 16),
+  checkLg:     svg('<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.8"/>', 20),
+  alert:       svg('<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/>', 16),
+  help:        svg('<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 114 2c-.8.5-1.5 1-1.5 2M12 17h.01"/>', 16),
+  xCircle:     svg('<circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/>', 20),
+  helpLg:      svg('<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 114 2c-.8.5-1.5 1-1.5 2M12 17h.01"/>', 20),
+  x:           svg('<path d="M6 6l12 12M18 6L6 18"/>'),
+  xSm:         svg('<path d="M6 6l12 12M18 6L6 18"/>', 18),
+  ext:         svg('<path d="M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h4"/>', 16),
+  arrow:       svg('<path d="M5 12h14M13 6l6 6-6 6"/>', 16),
+  back:        svg('<path d="M19 12H5M11 6l-6 6 6 6"/>', 16),
+  doc:         svg('<path d="M7 3h7l5 5v13H7V3z"/><path d="M14 3v5h5"/>', 16),
+  docLg:       svg('<path d="M7 3h7l5 5v13H7V3z"/><path d="M14 3v5h5"/>'),
+  globe:       svg('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18"/>'),
+  list:        svg('<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>', 16),
+  plus:        svg('<path d="M12 5v14M5 12h14"/>', 24),
+  plusSm:      svg('<path d="M12 5v14M5 12h14"/>', 18),
+  search:      svg('<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>', 18),
+  phone:       svg('<path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2"/>'),
+  mail:        svg('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>'),
+  bookmark:    svg('<path d="M7 4h10v16l-5-3.5L7 20V4z"/>'),
+}
+const MATCH_ICON = { eligible: ICON.check, almost: ICON.alert, unknown: ICON.help, not: ICON.xSm }
+const RULE_ICON  = { met: ICON.checkLg, notMet: ICON.xCircle, unknown: ICON.helpLg }
+
+/* =====================================================================
+   4. HELPERS
+   ===================================================================== */
+
+const view = document.getElementById('view')
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
+const byId = (id) => SCHEMES.find((s) => s.id === id)
+const isSaved = (id) => SAVED.some((a) => a.schemeId === id)
+const hostOf = (url) => { try { return new URL(url).host } catch (e) { return url } }
+const pad = (n) => String(n).padStart(2, '0')
+
+function dateIn(days) {
+  const d = new Date(); d.setDate(d.getDate() + days)
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function deadlineText(s, countdown = true) {
+  if (s.closesInDays === null) return 'Apply any time'
+  if (s.closesInDays < 0) return 'Closed'
+  const left = `${s.closesInDays} day${s.closesInDays === 1 ? '' : 's'} left`
+  return countdown ? `Closes ${dateIn(s.closesInDays)} · ${left}` : `Closes ${dateIn(s.closesInDays)}`
+}
+
+// Where the deadline stands today. "Closing soon" = 14 days or fewer.
+function deadlineStatus(s) {
+  if (s.closesInDays === null) return 'rolling'
+  if (s.closesInDays < 0) return 'closed'
+  return s.closesInDays <= 14 ? 'closingSoon' : 'open'
+}
+
+const matchPill = (m) => `<span class="pill ${m}">${MATCH_ICON[m]}${MATCH_LABEL[m]}</span>`
+const modePill  = (m) => `<span class="pill mode ${m === 'onlineAndOffline' ? 'offline' : ''}">${MODE_LABEL[m]}</span>`
+const dlPill    = (s) => { const k = deadlineStatus(s); return `<span class="pill dl-${k}">${DL_LABEL[k]}</span>` }
+const plural    = (n, one, many) => `${n} ${n === 1 ? one : many}`
+
+function officialSiteLink(s, cls = 'btn btn-outline') {
+  return `<a class="${cls}" href="${esc(s.portal.url)}" target="_blank" rel="noopener noreferrer">Official site ${ICON.ext}<span class="sr-only"> for ${esc(s.name)} (opens in a new tab)</span></a>`
+}
+
+function save(id) { if (!isSaved(id)) SAVED = [{ schemeId: id, savedDaysAgo: 0 }, ...SAVED] }
+function unsave(id) { SAVED = SAVED.filter((a) => a.schemeId !== id) }
+
+/* ---- Shared pieces: documents, steps, offline ---- */
+
+function documentsHTML(s) {
+  return `<ol class="doc-list">${s.documents.map(([name, note], i) => `
+    <li class="card"><span class="n" aria-hidden="true">${i + 1}</span><span><strong>${esc(name)}</strong><small>${esc(note)}</small></span></li>`).join('')}</ol>`
+}
+
+function stepsHTML(s) {
+  return `<ol class="steps">${s.steps.map(([title, text], i) => `
+    <li><span class="n" aria-hidden="true">${pad(i + 1)}</span><span><strong>${esc(title)}</strong><small>${esc(text)}</small></span></li>`).join('')}</ol>`
+}
+
+function offlineHTML(s) {
+  const o = s.offline
+  if (!o) {
+    return `<div class="card box" style="display:flex;gap:12px;align-items:flex-start;padding:20px">
+      <span style="color:var(--eligible)">${ICON.checkLg}</span>
+      <span><strong>No offline visit needed</strong><br><span class="muted" style="font-size:14px">Everything is uploaded on the portal. Your college verifies it online.</span></span>
+    </div>`
+  }
+  return `<div class="stack">
+    <div class="offline-box"><span class="eyebrow">Offline submission required</span><p>${esc(o.summary)}</p></div>
+    <div class="two">
+      <div class="card box"><span class="eyebrow">Where</span><p>${esc(o.where)}</p></div>
+      <div class="card box"><span class="eyebrow">By when</span><p>${esc(o.when)}</p></div>
+    </div>
+    <div class="card box"><span class="eyebrow">What to carry</span><ul>${o.carry.map((c) => `<li>${esc(c)}</li>`).join('')}</ul></div>
+    ${o.tip ? `<p class="tip">${esc(o.tip)}</p>` : ''}
+  </div>`
+}
+
+/* ---- Card for a saved scheme (dashboard + My applications) ---- */
+
+function appCardHTML(s, i, withRemove) {
+  return `
+    <article class="card app-card">
+      <div class="row">
+        <span class="num" aria-hidden="true">${pad(i + 1)}</span>
+        ${dlPill(s)}${modePill(s.mode)}
+        ${withRemove ? `<button class="icon-btn" type="button" data-unsave="${s.id}" aria-label="Remove ${esc(s.name)} from My applications" title="Remove" style="margin-left:auto">${ICON.xSm}</button>` : ''}
+      </div>
+      <div class="title">
+        <span class="icon-tile">${ICON[s.type]}</span>
+        <div><h3>${esc(s.name)}</h3><p class="provider">${esc(s.provider)}</p></div>
+      </div>
+      <div>${matchPill(s.match)}</div>
+      <dl class="facts-mini">
+        <div><dt>Award</dt><dd>${esc(s.amount)}</dd></div>
+        <div><dt>Deadline</dt><dd>${deadlineText(s, false)}</dd></div>
+      </dl>
+      <p class="needs">
+        <span>${ICON.doc}${plural(s.documents.length, 'document needed', 'documents needed')}</span>
+        <span>${ICON.list}${plural(s.steps.length, 'step', 'steps')}</span>
+      </p>
+      <div class="actions">
+        <a class="btn btn-red" href="#scheme/${s.id}">Full details ${ICON.arrow}<span class="sr-only">: ${esc(s.name)}</span></a>
+        ${officialSiteLink(s)}
+      </div>
+    </article>`
+}
+
+/* =====================================================================
+   5. PAGE: DASHBOARD (#home)
+   ===================================================================== */
+
+function renderHome() {
+  document.title = 'Dashboard · Fundora'
+  const eligible = SCHEMES.filter((s) => s.match === 'eligible' && deadlineStatus(s) !== 'closed')
+  const closing = eligible.filter((s) => deadlineStatus(s) === 'closingSoon')
+  const saved = SAVED.map((a) => byId(a.schemeId)).filter(Boolean)
+  const savedOpen = saved.filter((s) => deadlineStatus(s) !== 'closed')
+  const offline = savedOpen.filter((s) => s.mode === 'onlineAndOffline').length
+  const [first, ...rest] = [...SCHEMES].sort((a, b) => a.popularity - b.popularity).slice(0, 5)
+
+  const stat = (label, value, sub, red) =>
+    `<div class="card stat ${red ? 'red' : ''}"><span class="label">${label}</span><span class="value">${value}</span><span class="sub">${sub}</span></div>`
+
+  const featured = first ? `
+    <article class="featured">
+      <p class="eyebrow">#1 this month · ${TYPE_LABEL[first.type]}</p>
+      <h3>${esc(first.name)}</h3>
+      <p class="provider">${esc(first.provider)}</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">${matchPill(first.match)}${modePill(first.mode)}</div>
+      <div class="bottom">
+        <div><div class="amount">${esc(first.amount)}</div><div class="deadline">${deadlineText(first)}</div></div>
+        <button class="btn btn-white" type="button" data-open="${first.id}">View details</button>
+      </div>
+    </article>` : ''
+
+  const cards = rest.map((s) => `
+    <article class="card scheme">
+      <div class="top"><span class="icon-tile" style="background:${TYPE_TILE[s.type]}">${ICON[s.type]}</span><span class="type">${TYPE_LABEL[s.type]}</span></div>
+      <div><h3>${esc(s.name)}</h3><p class="provider">${esc(s.provider)}</p></div>
+      <div class="tags">${modePill(s.mode)}</div>
+      <div>${matchPill(s.match)}</div>
+      <div class="bottom">
+        <div><div class="amount">${esc(s.amount)}</div><div class="deadline">${deadlineText(s, false)}</div></div>
+        <button class="btn btn-outline" type="button" data-open="${s.id}">Details</button>
+      </div>
+    </article>`).join('')
+
+  const appCards = saved.slice(0, 3).map((s, i) => appCardHTML(s, i, false)).join('')
+  const viewAll = saved.length > 3
+    ? `<a class="add-card" href="#applications" style="min-height:200px"><strong style="font-size:16px">View all ${saved.length} saved schemes</strong><small>Full details and official documents for each</small></a>`
+    : ''
+  const appsBlock = saved.length
+    ? `<div class="apps">${appCards}${viewAll}</div>`
+    : `<a class="add-card" href="#applications"><strong>You haven’t saved any schemes yet</strong><small>Open a scheme and choose “Save to My applications”.</small></a>`
+
+  view.className = 'content'
+  view.innerHTML = `
+    <div class="page-head">
+      <div><p class="eyebrow">Your dashboard</p><h1>Help exists. Here’s yours.</h1></div>
+      <form class="search" role="search" onsubmit="event.preventDefault()">
+        <label class="sr-only" for="search">Search scholarships</label>
+        ${ICON.search}
+        <input id="search" type="search" placeholder="Search by name, provider or keyword…">
+      </form>
+    </div>
+
+    <section aria-label="Summary" class="stats">
+      ${stat('Eligible for', eligible.length, 'open schemes you can apply for', true)}
+      ${stat('Closing in 14 days', closing.length, 'of your eligible schemes')}
+      ${stat('Saved to apply', savedOpen.length, 'schemes in My applications')}
+      ${stat('Offline visits needed', offline, 'saved schemes need hard copies in person')}
+    </section>
+
+    <section aria-labelledby="popular-title">
+      <div class="section-head">
+        <div><p class="eyebrow">01 · Popular now</p><h2 id="popular-title">Popular scholarships</h2></div>
+        <a class="more-link" href="#browse">Browse all schemes →</a>
+      </div>
+      <div class="bento">${featured}${cards}</div>
+    </section>
+
+    <section aria-labelledby="apps-title">
+      <div class="section-head">
+        <div><p class="eyebrow">02 · Saved to apply</p><h2 id="apps-title">My applications</h2></div>
+        <a class="more-link" href="#applications">Open all applications →</a>
+      </div>
+      ${appsBlock}
+    </section>`
+}
+
+/* =====================================================================
+   6. PAGE: MY APPLICATIONS (#applications)
+   ===================================================================== */
+
+const appsState = { filter: 'all', query: '', sort: 'closing' }
+const FILTERS = {
+  all:         ['All', () => true],
+  closingSoon: ['Closing soon', (s) => deadlineStatus(s) === 'closingSoon'],
+  open:        ['Open', (s) => deadlineStatus(s) !== 'closed'],
+  offline:     ['Needs offline visit', (s) => s.mode === 'onlineAndOffline'],
+  closed:      ['Closed', (s) => deadlineStatus(s) === 'closed'],
+}
+
+function renderApplications() {
+  document.title = 'My applications · Fundora'
+  view.className = 'content tight'
+  view.innerHTML = `
+    <div>
+      <p class="eyebrow" style="letter-spacing:0;text-transform:none;font-size:14px"><a href="#home" style="color:inherit">Home</a> / My applications</p>
+      <h1>My applications</h1>
+      <p class="lead">Schemes you saved to apply for. Open one for everything you need, then apply on its official website.</p>
+    </div>
+    <div class="toolbar">
+      <div class="search">
+        <label class="sr-only" for="app-search">Search saved schemes</label>
+        ${ICON.search}
+        <input id="app-search" type="search" placeholder="Search saved schemes…" value="${esc(appsState.query)}">
+      </div>
+      <label class="sr-only" for="app-sort">Sort saved schemes</label>
+      <select id="app-sort">
+        <option value="closing" ${appsState.sort === 'closing' ? 'selected' : ''}>Closing soonest</option>
+        <option value="saved" ${appsState.sort === 'saved' ? 'selected' : ''}>Recently saved</option>
+      </select>
+      <a class="btn btn-dark" href="#browse">${ICON.plusSm}Save a scheme</a>
+    </div>
+    <div class="filters" role="group" aria-label="Filter saved schemes" id="app-filters"></div>
+    <div class="apps" id="app-grid"></div>
+    <p class="empty" id="app-empty" hidden>No saved schemes match this filter.</p>
+    <section class="reminders" aria-labelledby="rem-title">
+      <h2 id="rem-title">Deadline reminders</h2>
+      <p>We email you 7 days and 1 day before each saved scheme’s deadline. You always apply on the official site.</p>
+    </section>`
+  drawApplicationsList()
+}
+
+// Redraws just the filters and cards, so typing in search keeps focus.
+function drawApplicationsList() {
+  const saved = SAVED.map((a) => ({ ...a, s: byId(a.schemeId) })).filter((r) => r.s)
+  const q = appsState.query.trim().toLowerCase()
+  const rows = saved
+    .filter((r) => FILTERS[appsState.filter][1](r.s) && `${r.s.name} ${r.s.provider}`.toLowerCase().includes(q))
+    .sort((a, b) => appsState.sort === 'saved'
+      ? a.savedDaysAgo - b.savedDaysAgo
+      : (a.s.closesInDays ?? 9999) - (b.s.closesInDays ?? 9999))
+
+  document.getElementById('app-filters').innerHTML = Object.entries(FILTERS).map(([key, [label, test]]) => `
+    <button class="filter" type="button" data-filter="${key}" aria-pressed="${appsState.filter === key}">
+      ${label}<span class="count">${saved.filter((r) => test(r.s)).length}</span>
+    </button>`).join('')
+
+  const addCard = appsState.filter === 'all' && !q
+    ? `<a class="add-card" href="#browse"><span class="plus">${ICON.plus}</span><strong>Save a scheme</strong><small>Find a scheme and save it to keep its details and deadline here.</small></a>`
+    : ''
+  document.getElementById('app-grid').innerHTML = addCard + rows.map((r, i) => appCardHTML(r.s, i, true)).join('')
+  document.getElementById('app-empty').hidden = rows.length > 0 || (appsState.filter === 'all' && !q)
+}
+
+/* =====================================================================
+   7. PAGE: SCHEME DETAILS (#scheme/<id>)
+   ===================================================================== */
+
+function renderScheme(id) {
+  const s = byId(id)
+  view.className = 'content tight'
+  if (!s) {
+    view.innerHTML = `<p class="empty">We couldn’t find this scheme.</p><a class="btn btn-outline" href="#applications" style="align-self:center">Back to My applications</a>`
+    return
+  }
+  document.title = `${s.name} · Fundora`
+  const saved = isSaved(s.id)
+  const back = { matches: ['#matches', 'Back to My matches'], browse: ['#browse', 'Back to Browse'], applications: ['#applications', 'Back to My applications'], home: ['#home', 'Back to dashboard'] }[lastListPage]
+
+  const sections = []
+  if (s.about || (s.benefits && s.benefits.length)) {
+    sections.push(['overview', 'About this scheme', `
+      ${s.about ? `<p class="about">${esc(s.about)}</p>` : ''}
+      ${s.benefits && s.benefits.length ? `<div class="card benefits"><span class="eyebrow">What you get</span>
+        <ul class="tick-list">${s.benefits.map((b) => `<li>${ICON.checkLg}${esc(b)}</li>`).join('')}</ul></div>` : ''}`])
+  }
+  sections.push(['eligibility', 'Eligibility', s.eligibility && s.eligibility.length
+    ? `<ul class="card rules">${s.eligibility.map(([rule, r]) => `
+        <li><span class="${r}">${RULE_ICON[r]}</span><span class="rule">${esc(rule)}</span><span class="verdict ${r}">${RULE_LABEL[r]}</span></li>`).join('')}</ul>`
+    : `<p class="muted">${esc(s.reason)}</p>`])
+  sections.push(['documents', 'Documents required', `<p class="muted" style="margin:0 0 12px">Keep these ready before you open the official portal.</p>${documentsHTML(s)}`])
+  sections.push(['steps', 'How to apply', stepsHTML(s)])
+  sections.push(['offline', 'Offline submission', offlineHTML(s)])
+  if (s.officialDocuments && s.officialDocuments.length) {
+    sections.push(['official', 'Official documents', `
+      <p class="muted" style="margin:0 0 12px">Guidelines, notifications and FAQs published by the scheme. They open on the official website (${esc(s.portal.name)}).</p>
+      <ul class="off-docs">${s.officialDocuments.map(([title, kind, format, url]) => `
+        <li><a class="card" href="${esc(url)}" target="_blank" rel="noopener noreferrer">
+          <span class="ic">${format === 'pdf' ? ICON.docLg : ICON.globe}</span>
+          <span class="txt"><strong>${esc(title)}</strong><small>${KIND_LABEL[kind]} · ${format === 'pdf' ? 'PDF' : 'Web page'} · ${esc(hostOf(url))}</small></span>
+          <span class="muted">${ICON.ext}</span><span class="sr-only">(opens in a new tab)</span>
+        </a></li>`).join('')}</ul>`])
+  }
+  if (s.importantDates && s.importantDates.length) {
+    sections.push(['dates', 'Important dates', `<ol class="timeline">${s.importantDates.map((d) => `
+      <li><small>${dateIn(d.inDays)}</small><strong>${esc(d.label)}</strong></li>`).join('')}</ol>`])
+  }
+  if (s.helpline) {
+    const h = s.helpline
+    sections.push(['help', 'Help and contact', `<div class="card help">
+      ${h.phone ? `<p><span class="muted">${ICON.phone}</span>${esc(h.phone)}</p>` : ''}
+      ${h.email ? `<p><span class="muted">${ICON.mail}</span>${esc(h.email)}</p>` : ''}
+      ${h.hours ? `<small>${esc(h.hours)}</small>` : ''}
+      <small>For questions about your application, contact ${esc(s.provider)} directly. Fundora can’t see or change your application.</small>
+    </div>`])
+  }
+
+  view.innerHTML = `
+    <a class="back-link" href="${back[0]}">${ICON.back}${back[1]}</a>
+    ${s.webSource ? `<p class="unverified" role="note"><strong>Fetched from the web.</strong> These details were read from ${esc(hostOf(s.webSource.url))} and haven’t been verified by Fundora yet. Check everything on the <a href="${esc(s.webSource.url)}" target="_blank" rel="noopener noreferrer">source page ↗</a> before you apply.</p>` : ''}
+
+    <header class="hero">
+      <p class="eyebrow">${TYPE_LABEL[s.type]} · ${esc(s.provider)}</p>
+      <h1>${esc(s.name)}</h1>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">${dlPill(s)}${modePill(s.mode)}</div>
+      <div class="reason">${matchPill(s.match)}<p>${esc(s.reason)}</p></div>
+      <dl class="hero-facts">
+        <div><dt>Award</dt><dd>${esc(s.amount)}</dd></div>
+        <div><dt>Deadline</dt><dd>${deadlineText(s)}</dd></div>
+        <div><dt>How to submit</dt><dd>${MODE_LABEL[s.mode]}</dd></div>
+      </dl>
+    </header>
+
+    <div class="detail-grid">
+      <div class="detail-main">
+        ${sections.map(([sid, title, body]) => `<section id="sec-${sid}" aria-labelledby="sec-${sid}-t"><h2 id="sec-${sid}-t">${title}</h2>${body}</section>`).join('')}
+      </div>
+      <aside class="detail-side">
+        <div class="card action-card">
+          <a class="btn btn-red" href="${esc(s.portal.url)}" target="_blank" rel="noopener noreferrer">Open ${esc(s.portal.name)} ${ICON.ext}<span class="sr-only">(opens in a new tab)</span></a>
+          <button class="btn btn-outline" type="button" data-toggle-save="${s.id}" aria-pressed="${saved}">${ICON.bookmark}${saved ? 'Saved in My applications' : 'Save to My applications'}</button>
+          <small>Opens ${esc(hostOf(s.portal.url))} in a new tab. Fundora never asks for your portal password and never charges a fee.</small>
+          <small class="verified">${s.webSource ? `Fetched from ${esc(hostOf(s.webSource.url))} today, not verified.` : `Details last checked against the official source on ${dateIn(0)}.`} <a href="#" onclick="return false">Report wrong info</a></small>
+        </div>
+        <nav class="card toc" aria-label="On this page">
+          <span class="eyebrow">On this page</span>
+          <ul>${sections.map(([sid, title]) => `<li><a href="#scheme/${s.id}" data-jump="sec-${sid}">${title}</a></li>`).join('')}</ul>
+        </nav>
+      </aside>
+    </div>`
+}
+
+/* =====================================================================
+   7b. PAGE: MY MATCHES (#matches)
+   ===================================================================== */
+
+const matchesState = { tab: 'eligible' }
+
+// Big red card, as on the dashboard, with a button to the full details page.
+function featuredMatchHTML(s, label) {
+  return `
+    <article class="featured">
+      <p class="eyebrow">${label} · ${TYPE_LABEL[s.type]}</p>
+      <h3>${esc(s.name)}</h3>
+      <p class="provider">${esc(s.provider)}</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">${matchPill(s.match)}${modePill(s.mode)}</div>
+      <p class="card-reason">${esc(s.reason)}</p>
+      <div class="bottom">
+        <div><div class="amount">${esc(s.amount)}</div><div class="deadline">${deadlineText(s)}</div></div>
+        <div class="card-actions">
+          <a class="btn btn-white" href="#scheme/${s.id}">Full details ${ICON.arrow}<span class="sr-only">: ${esc(s.name)}</span></a>
+        </div>
+      </div>
+    </article>`
+}
+
+// White card, as on the dashboard, with a button to the full details page.
+function matchCardHTML(s) {
+  return `
+    <article class="card scheme">
+      <div class="top"><span class="icon-tile" style="background:${TYPE_TILE[s.type]}">${ICON[s.type]}</span><span class="type">${TYPE_LABEL[s.type]}</span></div>
+      <div><h3>${esc(s.name)}</h3><p class="provider">${esc(s.provider)}</p></div>
+      <div class="tags">${modePill(s.mode)}${dlPill(s)}</div>
+      <div>${matchPill(s.match)}</div>
+      <p class="card-reason">${esc(s.reason)}</p>
+      <div class="bottom">
+        <div><div class="amount">${esc(s.amount)}</div><div class="deadline">${deadlineText(s, false)}</div></div>
+        <a class="btn btn-red" href="#scheme/${s.id}">Full details ${ICON.arrow}<span class="sr-only">: ${esc(s.name)}</span></a>
+      </div>
+    </article>`
+}
+
+function renderMatches() {
+  document.title = 'My matches · Fundora'
+  const tabs = { eligible: 'Eligible', almost: 'Almost eligible' }
+  const list = SCHEMES.filter((s) => s.match === matchesState.tab && !s.webSource)
+    .sort((a, b) => (a.closesInDays ?? 9999) - (b.closesInDays ?? 9999))
+  const [first, ...rest] = list
+
+  view.className = 'content tight'
+  view.innerHTML = `
+    <div>
+      <p class="eyebrow">Your matches</p>
+      <h1>My matches</h1>
+      <p class="lead">Every scheme you qualify for, checked against your profile. Open one for its documents, steps and official link.</p>
+    </div>
+    <div class="filters" role="group" aria-label="Show matches">
+      ${Object.entries(tabs).map(([key, label]) => `
+        <button class="filter" type="button" data-match-tab="${key}" aria-pressed="${matchesState.tab === key}">
+          ${label}<span class="count">${SCHEMES.filter((s) => s.match === key && !s.webSource).length}</span>
+        </button>`).join('')}
+    </div>
+    ${first
+      ? `<div class="bento">${featuredMatchHTML(first, matchesState.tab === 'eligible' ? 'Closes first' : 'Closest match')}${rest.map(matchCardHTML).join('')}</div>`
+      : `<p class="empty">No schemes here yet. Complete your profile to find more matches.</p>`}`
+}
+
+/* =====================================================================
+   7c. PAGE: BROWSE (#browse)
+   ===================================================================== */
+
+// web.status: idle | loading | done | error.  fetching: { [url]: 'loading' | scheme object | 'error' }
+const browseState = { query: '', type: 'all', web: { status: 'idle', query: '', results: [] }, fetching: {} }
+
+async function searchWeb(q) {
+  if (WEB_API) {
+    const res = await fetch(`${WEB_API}/web-search?q=${encodeURIComponent(q)}`, { credentials: 'include' })
+    if (!res.ok) throw new Error('search failed')
+    return res.json()
+  }
+  // Example mode: pretend to search, return results whose keywords match (or all, as examples).
+  await new Promise((r) => setTimeout(r, 700))
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean)
+  const hits = DEMO_WEB.filter((d) => words.some((w) => `${d.result.title} ${d.result.keywords}`.toLowerCase().includes(w)))
+  return (hits.length ? hits : DEMO_WEB).map((d) => d.result)
+}
+
+async function fetchDetails(url) {
+  if (WEB_API) {
+    const res = await fetch(`${WEB_API}/web-extract?url=${encodeURIComponent(url)}`, { credentials: 'include' })
+    if (!res.ok) throw new Error('extract failed')
+    return res.json()
+  }
+  await new Promise((r) => setTimeout(r, 900))
+  const d = DEMO_WEB.find((x) => x.result.url === url)
+  if (!d) throw new Error('no example details')
+  return d.scheme
+}
+
+// A fetched scheme joins SCHEMES (marked webSource) so it gets a full details page.
+function addWebScheme(raw, sourceUrl) {
+  const scheme = {
+    match: 'unknown',
+    reason: 'Fundora hasn’t checked this against your profile yet.',
+    popularity: 999,
+    ...raw,
+    webSource: { url: sourceUrl, fetchedDaysAgo: 0 },
+  }
+  if (!byId(scheme.id)) SCHEMES.push(scheme)
+  return byId(scheme.id)
+}
+
+function renderBrowse() {
+  document.title = 'Browse · Fundora'
+  const types = ['all', ...new Set(SCHEMES.filter((s) => !s.webSource).map((s) => s.type))]
+  view.className = 'content tight'
+  view.innerHTML = `
+    <div>
+      <p class="eyebrow">Browse</p>
+      <h1>Find any scheme</h1>
+      <p class="lead">Search Fundora’s list, or search official websites for any other scholarship, loan or aid.</p>
+    </div>
+    <form class="big-search" role="search" id="browse-form">
+      <div class="search">
+        <label class="sr-only" for="browse-q">Search schemes</label>
+        ${ICON.search}
+        <input id="browse-q" type="search" placeholder="e.g. Kotak Kanya, education loan, laptop scheme…" value="${esc(browseState.query)}" autocomplete="off">
+      </div>
+      <button class="btn btn-red" type="submit">Search</button>
+    </form>
+    <div class="filters" role="group" aria-label="Type of aid" id="browse-types">
+      ${types.map((t) => `
+        <button class="filter" type="button" data-browse-type="${t}" aria-pressed="${browseState.type === t}">
+          ${t === 'all' ? 'All aid' : TYPE_LABEL[t]}
+        </button>`).join('')}
+    </div>
+    <section aria-labelledby="local-title">
+      <div class="section-head"><div><p class="eyebrow">In Fundora</p><h2 id="local-title" style="font-size:22px">Checked against your profile</h2></div></div>
+      <div class="bento" id="browse-local"></div>
+      <p class="empty" id="browse-local-empty" hidden>Nothing in Fundora’s list matches. Try searching the web below.</p>
+    </section>
+    <section aria-labelledby="web-title" class="card web-panel" id="browse-web"></section>`
+  drawBrowseLocal()
+  drawBrowseWeb()
+}
+
+function drawBrowseLocal() {
+  const q = browseState.query.trim().toLowerCase()
+  const list = SCHEMES.filter((s) => !s.webSource
+      && (browseState.type === 'all' || s.type === browseState.type)
+      && `${s.name} ${s.provider} ${TYPE_LABEL[s.type]}`.toLowerCase().includes(q))
+    .sort((a, b) => a.popularity - b.popularity)
+  document.getElementById('browse-local').innerHTML = list.map(matchCardHTML).join('')
+  document.getElementById('browse-local-empty').hidden = list.length > 0
+}
+
+function drawBrowseWeb() {
+  const box = document.getElementById('browse-web')
+  if (!box) return
+  const w = browseState.web
+  const q = browseState.query.trim()
+  const exampleNote = WEB_API ? '' : `<p class="web-note">Example mode: these are sample web results so you can try the flow. Connect the backend (WEB_API) to search the real web.</p>`
+  const head = `<div class="head"><div><p class="eyebrow">From the web</p><h3 id="web-title">Search official websites</h3></div>
+    ${q ? `<button class="btn btn-outline" type="button" data-web-search>${ICON.search}Search the web for “${esc(q)}”</button>` : ''}</div>`
+
+  let body = ''
+  if (!q && w.status === 'idle') {
+    body = `<p class="muted" style="margin:0">Can’t find a scheme in Fundora’s list? Type its name above and search the web. We read the official page and pull out the amount, eligibility, documents and steps.</p>`
+  } else if (w.status === 'loading') {
+    body = `<p style="margin:0;display:flex;align-items:center;gap:10px" role="status"><span class="spinner"></span>Searching the web for “${esc(w.query)}”…</p>`
+  } else if (w.status === 'error') {
+    body = `<p role="alert" style="margin:0">We couldn’t search the web just now. Try again in a moment.</p>`
+  } else if (w.status === 'done') {
+    body = `${exampleNote}
+      <p class="muted" style="margin:0">${w.results.length} result${w.results.length === 1 ? '' : 's'} for “${esc(w.query)}”</p>
+      <ul class="web-list">${w.results.map(webItemHTML).join('')}</ul>`
+  }
+  box.innerHTML = head + body
+}
+
+function webItemHTML(r) {
+  const f = browseState.fetching[r.url]
+  let extra = `<div class="card-actions">
+      <button class="btn btn-red" type="button" data-fetch="${esc(r.url)}">Fetch details</button>
+      <a class="btn btn-outline" href="${esc(r.url)}" target="_blank" rel="noopener noreferrer">Open source ${ICON.ext}<span class="sr-only">(opens in a new tab)</span></a>
+    </div>`
+  if (f === 'loading') {
+    extra = `<p style="margin:0;display:flex;align-items:center;gap:10px" role="status"><span class="spinner"></span>Reading the page and pulling out the details…</p>`
+  } else if (f === 'error') {
+    extra = `<p role="alert" style="margin:0">We couldn’t read this page. <a href="${esc(r.url)}" target="_blank" rel="noopener noreferrer">Open it yourself ↗</a></p>`
+  } else if (f && typeof f === 'object') {
+    extra = `<div class="fetched">
+      <dl>
+        <div><dt>Award</dt><dd>${esc(f.amount)}</dd></div>
+        <div><dt>Deadline</dt><dd>${deadlineText(f, false)}</dd></div>
+        <div><dt>You’ll need</dt><dd>${plural(f.documents.length, 'document', 'documents')} · ${plural(f.steps.length, 'step', 'steps')}</dd></div>
+      </dl>
+      <p class="web-note" style="margin:0">Fetched from ${esc(hostOf(r.url))}. Not yet verified by Fundora, so check the official site before applying.</p>
+      <div class="card-actions">
+        <a class="btn btn-red" href="#scheme/${f.id}">Full details ${ICON.arrow}</a>
+        <button class="btn btn-outline" type="button" data-toggle-save="${f.id}" aria-pressed="${isSaved(f.id)}">${isSaved(f.id) ? 'Saved in My applications' : 'Save to My applications'}</button>
+      </div>
+    </div>`
+  }
+  return `<li class="web-item">
+    <span class="src">${ICON.globe}${esc(hostOf(r.url))}</span>
+    <h4>${esc(r.title)}</h4>
+    <p>${esc(r.snippet)}</p>
+    ${extra}
+  </li>`
+}
+
+async function runWebSearch() {
+  const q = browseState.query.trim()
+  if (!q) return
+  browseState.web = { status: 'loading', query: q, results: [] }
+  drawBrowseWeb()
+  try {
+    const results = await searchWeb(q)
+    browseState.web = { status: 'done', query: q, results }
+  } catch (e) {
+    browseState.web = { status: 'error', query: q, results: [] }
+  }
+  drawBrowseWeb()
+}
+
+async function runFetch(url) {
+  browseState.fetching[url] = 'loading'
+  drawBrowseWeb()
+  try {
+    browseState.fetching[url] = addWebScheme(await fetchDetails(url), url)
+  } catch (e) {
+    browseState.fetching[url] = 'error'
+  }
+  drawBrowseWeb()
+}
+
+/* =====================================================================
+   8. QUICK-VIEW DRAWER (dashboard "Details" buttons)
+   ===================================================================== */
+
+const drawer = document.getElementById('drawer')
+let current = null
+let currentTab = 'documents'
+
+function openDetails(id) {
+  current = byId(id)
+  if (!current) return
+  currentTab = 'documents'
+  renderDrawer()
+  drawer.showModal()
+}
+
+function renderDrawer() {
+  const s = current
+  const saved = isSaved(s.id)
+  const tabs = [
+    ['documents', 'Documents', String(s.documents.length), false],
+    ['steps', 'How to apply', `${s.steps.length} steps`, false],
+    ['offline', 'Offline submission', s.offline ? 'Required' : 'Not needed', Boolean(s.offline)],
+  ]
+  const panel = currentTab === 'documents'
+    ? `<p class="muted" style="margin:0;font-size:14px">Keep these ready before you open the official portal.</p>${documentsHTML(s)}`
+    : currentTab === 'steps' ? stepsHTML(s) : offlineHTML(s)
+
+  drawer.innerHTML = `
+    <div class="drawer-inner">
+      <header class="drawer-head">
+        <div class="row">
+          <span class="eyebrow">${TYPE_LABEL[s.type]} · ${esc(s.provider)}</span>
+          <button class="close" type="button" data-close aria-label="Close details">${ICON.x}</button>
+        </div>
+        <h2 id="drawer-title">${esc(s.name)}</h2>
+        <div class="reason">${matchPill(s.match)}<p style="font-size:14px">${esc(s.reason)}</p></div>
+      </header>
+      <dl class="facts">
+        <div><dt>Award</dt><dd>${esc(s.amount)}</dd></div>
+        <div><dt>Deadline</dt><dd>${deadlineText(s)}</dd></div>
+        <div><dt>How to submit</dt><dd>${MODE_LABEL[s.mode]}</dd></div>
+      </dl>
+      <div class="tabs" role="tablist" aria-label="Scheme details">
+        ${tabs.map(([key, label, badge, warn]) => `
+          <button class="tab" type="button" role="tab" data-tab="${key}" aria-selected="${currentTab === key}">
+            ${label}<span class="badge ${warn ? 'warn' : ''}">${badge}</span>
+          </button>`).join('')}
+      </div>
+      <div class="panel" role="tabpanel">
+        ${panel}
+        <a class="full-link" href="#scheme/${s.id}" data-close-to>See full details and official documents ${ICON.arrow}</a>
+      </div>
+      <footer class="drawer-foot">
+        <div class="row">
+          <a class="btn btn-red" href="${esc(s.portal.url)}" target="_blank" rel="noopener noreferrer">Open ${esc(s.portal.name)} ${ICON.ext}<span class="sr-only">(opens in a new tab)</span></a>
+          <button class="btn btn-outline" type="button" data-toggle-save="${s.id}" aria-pressed="${saved}">${saved ? 'Saved in My applications' : 'Save to My applications'}</button>
+        </div>
+        <small>Opens ${esc(hostOf(s.portal.url))} in a new tab. Fundora never asks for your portal password and never charges a fee.</small>
+      </footer>
+    </div>`
+}
+
+/* =====================================================================
+   9. ROUTING AND EVENTS
+   ===================================================================== */
+
+let lastListPage = 'home'   // where the scheme page's Back link goes
+
+function route() {
+  const hash = location.hash.slice(1) || 'home'
+  const [page, arg] = hash.split('/')
+  if (page !== 'scheme') lastListPage = ['matches', 'browse', 'applications'].includes(page) ? page : 'home'
+  if (page === 'applications') renderApplications()
+  else if (page === 'matches') renderMatches()
+  else if (page === 'browse') renderBrowse()
+  else if (page === 'scheme') renderScheme(arg)
+  else renderHome()
+
+  const active = page === 'scheme' ? lastListPage : page in { applications: 1, matches: 1, browse: 1 } ? page : 'home'
+  document.querySelectorAll('[data-nav]').forEach((a) => {
+    if (a.dataset.nav === active) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current')
+  })
+  window.scrollTo(0, 0)
+  view.focus({ preventScroll: true })
+}
+window.addEventListener('hashchange', route)
+
+document.addEventListener('click', (e) => {
+  const t = e.target
+  const open = t.closest('[data-open]')
+  if (open) { openDetails(open.dataset.open); return }
+
+  const filter = t.closest('[data-filter]')
+  if (filter) { appsState.filter = filter.dataset.filter; drawApplicationsList(); return }
+
+  const rm = t.closest('[data-unsave]')
+  if (rm) { unsave(rm.dataset.unsave); drawApplicationsList(); return }
+
+  const mt = t.closest('[data-match-tab]')
+  if (mt) { matchesState.tab = mt.dataset.matchTab; renderMatches(); return }
+
+  const bt = t.closest('[data-browse-type]')
+  if (bt) {
+    browseState.type = bt.dataset.browseType
+    document.querySelectorAll('[data-browse-type]').forEach((b) => b.setAttribute('aria-pressed', b === bt))
+    drawBrowseLocal(); return
+  }
+
+  if (t.closest('[data-web-search]')) { runWebSearch(); return }
+
+  const fetchBtn = t.closest('[data-fetch]')
+  if (fetchBtn) { runFetch(fetchBtn.dataset.fetch); return }
+
+  const jump = t.closest('[data-jump]')
+  if (jump) { e.preventDefault(); document.getElementById(jump.dataset.jump).scrollIntoView(); return }
+
+  const toggle = t.closest('[data-toggle-save]')
+  if (toggle) {
+    const id = toggle.dataset.toggleSave
+    isSaved(id) ? unsave(id) : save(id)
+    if (drawer.open) renderDrawer()
+    else if (document.getElementById('browse-web')) drawBrowseWeb()
+    else route()
+  }
+})
+
+document.addEventListener('input', (e) => {
+  if (e.target.id === 'app-search') { appsState.query = e.target.value; drawApplicationsList() }
+  if (e.target.id === 'browse-q') {
+    browseState.query = e.target.value
+    if (browseState.web.status !== 'loading') browseState.web = { status: 'idle', query: '', results: [] }
+    drawBrowseLocal(); drawBrowseWeb()
+  }
+})
+document.addEventListener('change', (e) => {
+  if (e.target.id === 'app-sort') { appsState.sort = e.target.value; drawApplicationsList() }
+})
+
+document.addEventListener('submit', (e) => {
+  if (e.target.id === 'browse-form') { e.preventDefault(); browseState.query = document.getElementById('browse-q').value; drawBrowseLocal(); runWebSearch() }
+})
+
+drawer.addEventListener('click', (e) => {
+  if (e.target === drawer || e.target.closest('[data-close]')) { drawer.close(); return }
+  if (e.target.closest('[data-close-to]')) { drawer.close(); return }  // the link then changes the page
+  const tab = e.target.closest('[data-tab]')
+  if (tab) {
+    currentTab = tab.dataset.tab
+    renderDrawer()
+    drawer.querySelector(`[data-tab="${currentTab}"]`).focus()
+  }
+})
+drawer.addEventListener('close', () => { if (!location.hash.startsWith('#scheme')) route() })
+
+/* =====================================================================
+   10. START
+   ===================================================================== */
+route()
+</script>
+</body>
+</html>

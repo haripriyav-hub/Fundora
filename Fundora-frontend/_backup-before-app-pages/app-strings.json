@@ -1,0 +1,195 @@
+{
+  "nav": {
+    "label": "App",
+    "home": "Home",
+    "matches": "My matches",
+    "applications": "My applications",
+    "browse": "Browse"
+  },
+  "sidebarNote": {
+    "title": "Guide and list, not apply",
+    "body": "We tell you what to prepare and where to go. You apply on the official portal yourself."
+  },
+  "sampleData": "Showing sample data until the Fundora API is connected.",
+  "loading": "Loading schemes…",
+  "loadError": "We couldn't load schemes. Check your connection and try again.",
+  "retry": "Try again",
+  "newTab": "(opens in a new tab)",
+  "match": {
+    "eligible": "Eligible",
+    "almost": "Almost eligible",
+    "not": "Not eligible",
+    "unknown": "Need more info"
+  },
+  "mode": {
+    "online": "Online only",
+    "onlineAndOffline": "Online + offline"
+  },
+  "aid": {
+    "all": "All aid",
+    "scholarship": "Scholarships",
+    "loan": "Education loans",
+    "feeWaiver": "Fee waivers",
+    "device": "Laptops & devices",
+    "hostel": "Hostel & food",
+    "books": "Books & small aids"
+  },
+  "aidSingular": {
+    "scholarship": "Scholarship",
+    "loan": "Education loan",
+    "feeWaiver": "Fee waiver",
+    "device": "Laptop & device",
+    "hostel": "Hostel & food",
+    "books": "Books & small aid"
+  },
+  "provider": {
+    "central": "Central government",
+    "state": "State government",
+    "private": "Private, CSR & colleges",
+    "bank": "Banks"
+  },
+  "status": {
+    "saved": "Saved",
+    "applying": "Applying",
+    "applied": "Applied",
+    "awarded": "Awarded",
+    "renewal": "Renewal due"
+  },
+  "deadline": {
+    "closes": "Closes {{date}}",
+    "daysLeft_one": "{{count}} day left",
+    "daysLeft_other": "{{count}} days left",
+    "rolling": "Apply any time",
+    "closed": "Closed"
+  },
+  "card": {
+    "details": "Details",
+    "viewDetails": "View details",
+    "officialSite": "Official site",
+    "officialSiteFor": "for {{name}}"
+  },
+  "dashboard": {
+    "docTitle": "Dashboard · Fundora",
+    "eyebrow": "Your dashboard",
+    "title": "Help exists. Here’s yours.",
+    "summary": "Summary",
+    "stats": {
+      "eligible": "Eligible for",
+      "eligibleSub": "open schemes you can apply for",
+      "closing": "Closing in 14 days",
+      "closingSub": "of your eligible schemes",
+      "docs": "Documents ready",
+      "docsSub": "for applications in progress",
+      "offline": "Offline visits needed",
+      "offlineSub": "hard copies to submit in person"
+    },
+    "popular": {
+      "eyebrow": "01 · Popular now",
+      "title": "Popular scholarships",
+      "all": "Browse all schemes",
+      "top": "#1 this month"
+    },
+    "apps": {
+      "eyebrow": "02 · In progress",
+      "title": "My applications",
+      "all": "Open all applications",
+      "viewAll_one": "View your application",
+      "viewAll_other": "View all {{count}} applications",
+      "viewAllSub": "Documents, steps and deadlines for each",
+      "empty": "You aren’t tracking any applications yet.",
+      "emptyCta": "Browse schemes"
+    }
+  },
+  "browse": {
+    "docTitle": "Browse · Fundora",
+    "matchesDocTitle": "My matches · Fundora",
+    "title": "Browse",
+    "subtitle": "Every scholarship, loan, fee waiver and aid for undergraduate students, checked against your profile.",
+    "matchesTitle": "My matches",
+    "matchesSubtitle": "Schemes you qualify for or nearly qualify for, best first.",
+    "searchLabel": "Search schemes",
+    "searchPlaceholder": "Search by name, provider or keyword…",
+    "sortLabel": "Sort results",
+    "sort": {
+      "best": "Best match first",
+      "closing": "Closing soonest",
+      "popular": "Most popular"
+    },
+    "typesLabel": "Type of aid",
+    "filters": "Filters",
+    "reset": "Reset",
+    "openNow": "Open for applications now",
+    "providerLegend": "Who provides it",
+    "groupsLegend": "Special groups",
+    "groups": {
+      "girls": "For girls",
+      "disability": "Students with disability",
+      "rural": "Rural / first-generation"
+    },
+    "eligLabel": "Show by eligibility",
+    "all": "All",
+    "results_one": "{{count}} result",
+    "results_other": "{{count}} results",
+    "bestMatch": "Best match",
+    "whyLabel": "Why this result",
+    "emptyTitle": "Nothing matches these filters",
+    "emptyBody": "Try another type of aid or switch eligibility to All.",
+    "footnote": "Fundora is not affiliated with any government body or provider. “Official site” opens the scheme’s own website, where you apply yourself."
+  },
+  "applications": {
+    "docTitle": "My applications · Fundora",
+    "title": "My applications",
+    "breadcrumb": "Breadcrumb",
+    "searchLabel": "Search applications",
+    "searchPlaceholder": "Search applications…",
+    "sortLabel": "Sort applications",
+    "sort": {
+      "closing": "Closing soonest",
+      "updated": "Last updated"
+    },
+    "track": "Track a scholarship",
+    "trackBody": "Add any scheme from Browse to keep its documents and deadlines in one place.",
+    "tabsLabel": "Filter by status",
+    "docsChip": "{{ready}}/{{total}} documents",
+    "progress": "Application progress",
+    "offlineStep": "Offline step",
+    "openDetails": "Documents & steps",
+    "remove": "Stop tracking {{name}}",
+    "removeShort": "Stop tracking",
+    "empty": "No applications match this filter.",
+    "remindersTitle": "Deadline reminders",
+    "remindersBody": "We email you 7 days and 1 day before each deadline. You always apply on the official site."
+  },
+  "drawer": {
+    "close": "Close details",
+    "award": "Award",
+    "deadline": "Deadline",
+    "submit": "How to submit",
+    "tabsLabel": "Scheme details",
+    "tabs": {
+      "documents": "Documents",
+      "steps": "How to apply",
+      "offline": "Offline submission"
+    },
+    "stepsBadge_one": "{{count}} step",
+    "stepsBadge_other": "{{count}} steps",
+    "offlineRequired": "Required",
+    "offlineNotNeeded": "Not needed",
+    "docsHint": "Tick what you already have. We only save the tick, never the document.",
+    "docsReady": "{{ready}} of {{total}} ready",
+    "offline": {
+      "required": "Offline submission required",
+      "where": "Where",
+      "when": "By when",
+      "carry": "What to carry"
+    },
+    "noOffline": {
+      "title": "No offline visit needed",
+      "body": "Everything is uploaded on the portal. Your college verifies it online."
+    },
+    "open": "Open {{portal}}",
+    "track": "Add to my applications",
+    "tracked": "Tracking ✓",
+    "footnote": "Opens {{domain}} in a new tab. Fundora never asks for your portal password and never charges a fee."
+  }
+}

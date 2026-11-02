@@ -1,0 +1,119 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+
+  /* Brand palette. Every text/background pair used on the site is checked for WCAG AA.
+     brand (#D63229) passes on white but not for small text on surface: use brand-strong there. */
+  --color-brand: #d63229;
+  --color-brand-strong: #b3231c;
+  --color-brand-soft: #fbe7e5;
+  --color-accent: #e0a030;
+  --color-accent-strong: #c98a1c;
+  --color-ink: #161616;
+  --color-muted: #5a5a5a;
+  --color-surface: #f2eee8;
+  --color-surface-2: #e9e3da;
+  --color-line: #e2dcd3;
+
+  /* Eligibility states */
+  --color-eligible: #1c6332;
+  --color-eligible-bg: #e3f1e6;
+  --color-almost: #7a4a00;
+  --color-almost-bg: #fbebcb;
+  --color-not: #9b2c2c;
+  --color-not-bg: #fbe8e8;
+  /* "Need more info" and the Applied status */
+  --color-info: #1f4e79;
+  --color-info-bg: #e2eef8;
+
+  /* Cards use 20px corners; headings use tight letter-spacing */
+  --radius-2xl: 1.25rem;
+  --tracking-tight: -0.03em;
+  --tracking-tighter: -0.04em;
+
+  --animate-fade-up: fade-up 0.35s ease-out both;
+  --animate-pop: pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  --animate-draw: draw 0.45s 0.15s ease-out both;
+  --animate-shake: shake 0.4s ease-in-out;
+  --animate-float: float 6s ease-in-out infinite;
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes pop {
+    from {
+      opacity: 0;
+      transform: scale(0.5);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  /* Pair with stroke-dasharray/stroke-dashoffset set to the path length */
+  @keyframes draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  @keyframes shake {
+    20%,
+    60% {
+      transform: translateX(-6px);
+    }
+    40%,
+    80% {
+      transform: translateX(6px);
+    }
+  }
+  @keyframes float {
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+  body {
+    @apply bg-surface font-sans text-base text-ink antialiased;
+  }
+  /* Keep anchored sections clear of the sticky navbar */
+  section[id] {
+    scroll-margin-top: 5rem;
+  }
+  /* Edge adds its own reveal/clear buttons; the password field has its own Show button */
+  input::-ms-reveal,
+  input::-ms-clear {
+    display: none;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand;
+  }
+}
